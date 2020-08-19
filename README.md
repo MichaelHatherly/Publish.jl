@@ -3,7 +3,8 @@
 *A universal document authoring package for [Julia][julia].*
 
 <!--written as raw html to avoid including these in the generated PDFs-->
-<a href="https://michaelhatherly.github.io/Publish.jl/0.1.0/"><img src="https://img.shields.io/badge/docs-0.1.0-blue.svg" alt="Documentation" /></a>
+<a href="https://michaelhatherly.github.io/Publish.jl/0.1.0/"><img src="https://img.shields.io/badge/docs-0.1.0-blue.svg" alt="Documentation (stable)" /></a>
+<a href="https://michaelhatherly.github.io/Publish.jl/dev/"><img src="https://img.shields.io/badge/docs-dev-blue.svg" alt="Documentation (dev)" /></a>
 <a href="https://travis-ci.org/MichaelHatherly/Publish.jl"><img src="https://travis-ci.org/MichaelHatherly/Publish.jl.svg?branch=master" alt="Build Status" /></a>
 <a href="https://codecov.io/gh/MichaelHatherly/Publish.jl"><img src="https://codecov.io/gh/MichaelHatherly/Publish.jl/branch/master/graph/badge.svg" alt="codecov" /></a>
 
