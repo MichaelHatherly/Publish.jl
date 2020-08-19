@@ -29,7 +29,7 @@
 <p><em><code>public</code></em> <strong><code>deploy</code></strong> — <code>function</code></p>
 <div class='doc' id='1'>
 <pre><code>deploy(
-    source, dir, [targets...];
+    source, [dir=&quot;.&quot;], [targets...=html];
     versioned=true,
     named=false,
     force=false,
@@ -40,7 +40,7 @@
 <code>source</code> can be either a <code>Module</code> or a <code>String</code> representing a <code>Project.toml</code>
 path.</p>
 <p>Keyword arguments can be used to control resulting directory structure.</p>
-<ul>
+<ul id="keywords">
 <li>
 <p><code>versioned</code> and <code>named</code>.</p>
 <p>These keywords will place the built files in either a versioned subdirectory,
@@ -60,6 +60,26 @@ This can be used to build a “tracking” version of documentation such as a
 versioned builds.</p>
 </li>
 </ul>
+<h2 id="examples"><a href="#examples" class="anchor"></a>Examples</h2>
+<p>In the following examples our project will be the <code>Publish</code> package. This can
+be switched out for any other project source, such as a Julia package or a
+simple <code>Project.toml</code> file.</p>
+<pre><code class="language-julia">deploy(Publish, &quot;build&quot;)
+</code></pre>
+<p>writes the output to the <code>&quot;build&quot;</code> subdirectory of the current directory.
+There will be a <code>build/&lt;version&gt;</code> folder containing HTML content.</p>
+<pre><code class="language-julia">deploy(Publish, &quot;build&quot;, pdf)
+</code></pre>
+<p>does the same as above, but build the <a href="Publish.pdf.html"><code>pdf</code></a> output instead.</p>
+<pre><code class="language-julia">deploy(Publish, &quot;all-docs&quot;, pdf, html)
+</code></pre>
+<p>or build everything at once.</p>
+<p>The keyword arguments control other aspects of the build, as shown
+<a href="#keywords">above</a>. For example,</p>
+<pre><code class="language-julia">deploy(Publish, &quot;ecosystem&quot;; named=true)
+</code></pre>
+<p>would build <code>Publish</code> documentation to an <code>ecosystem/Publish/&lt;version&gt;</code>
+subdirectory.</p>
 </div>
 </div>
 </article>

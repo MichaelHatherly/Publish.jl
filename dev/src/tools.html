@@ -92,7 +92,7 @@ end
 without the network interaction —  that should be provided separately.</p>
 <pre><code class="language-julia">&quot;&quot;&quot;
     deploy(
-        source, dir, [targets...];
+        source, [dir=&quot;.&quot;], [targets...=html];
         versioned=true,
         named=false,
         force=false,
@@ -105,6 +105,7 @@ path.
 
 Keyword arguments can be used to control resulting directory structure.
 
+{#keywords}
   - `versioned` and `named`.
 
     These keywords will place the built files in either a versioned subdirectory,
@@ -121,6 +122,41 @@ Keyword arguments can be used to control resulting directory structure.
     This can be used to build a &quot;tracking&quot; version of documentation such as a
     &quot;dev&quot; or &quot;stable&quot; that changes over time while still retaining the exact
     versioned builds.
+
+# Examples
+
+In the following examples our project will be the `Publish` package. This can
+be switched out for any other project source, such as a Julia package or a
+simple `Project.toml` file.
+
+```julia
+deploy(Publish, &quot;build&quot;)
+```
+
+writes the output to the `&quot;build&quot;` subdirectory of the current directory.
+There will be a `build/&lt;version&gt;` folder containing HTML content.
+
+```julia
+deploy(Publish, &quot;build&quot;, pdf)
+```
+
+does the same as above, but build the [`pdf`](#) output instead.
+
+```julia
+deploy(Publish, &quot;all-docs&quot;, pdf, html)
+```
+
+or build everything at once.
+
+The keyword arguments control other aspects of the build, as shown
+[above](#keywords). For example,
+
+```julia
+deploy(Publish, &quot;ecosystem&quot;; named=true)
+```
+
+would build `Publish` documentation to an `ecosystem/Publish/&lt;version&gt;`
+subdirectory.
 &quot;&quot;&quot;
 function deploy(
     source,
