@@ -59,7 +59,7 @@ end
         versioned=true,
         named=false,
         force=false,
-        branch=nothing,
+        label=nothing,
     )
 
 Build the `source` using the given `targets` list in the `dir` directory.
@@ -80,21 +80,23 @@ Keyword arguments can be used to control resulting directory structure.
   - `force` will remove the calculated build path prior to building
     if it already exists.
 
-  - `branch` specifies a temporal folder name to copy the finished build to.
+  - `label` specifies a temporal folder name to copy the finished build to.
     This can be used to build a "tracking" version of documentation such as a
     "dev" or "stable" that changes over time while still retaining the exact
     versioned builds.
 """
 function deploy(
     source,
-    dir::AbstractString,
+    dir::AbstractString=".",
     targets...=html;
-    versioned=true,
-    named=false,
-    force=false,
-    branch=nothing,
+    versioned::Bool=true,
+    named::Bool=false,
+    force::Bool=false,
+    label::AbstractString="",
+    root::AbstractString="/",
     kws...
 )
+    startswith(root, '/') || error("'root' keyword must be an absolute path.")
     p = from_source(source)
     name = named ? p.env["name"] : ""
     version = versioned ? p.env["version"] : ""
@@ -102,35 +104,36 @@ function deploy(
     path = joinpath(parts...)
     force && rm(path; recursive=true, force=true)
     if isdir(path)
-        @warn "Directory '$path' already exists. Use force to overwrite it."
+        @warn "'$path' already exists. Use force to overwrite it."
     else
         for target in targets
             target(p, path)
         end
     end
-    if branch isa String
-        isempty(branch) && error("'branch' cannot be empty.")
-        ## Copy content to the specified tracking name as well, such as
-        ## 'release-0.5', 'latest', 'stable', etc.
-        to = joinpath(filter(!isempty, [dir, name, branch])...)
-        cp(path, to; force=true)
+    if !isempty(label)
+        ## Build the project for the given `label` as well.
+        to = joinpath(filter(!isempty, [dir, name, label])...)
+        rm(to; recursive=true, force=true)
+        for target in targets
+            target(p, to)
+        end
     end
     if versioned
         ## Find the current versions.
         dir = joinpath(filter(!isempty, [dir, name])...)
-        versions = sort!(readdir(dir); rev=true)
+        versions = sort!(filter(s->!startswith(s, '.'), readdir(dir)); rev=true)
         ## Write a version.js file containing the list of all versions.
         io = IOBuffer()
         println(io, "const PUBLISH_VERSIONS = [")
         for v in versions
-            println(io, " "^4, "[", repr(v), ",", repr(joinpath("/", dir, v, "index.html")), "],")
+            println(io, " "^4, "[", repr(v), ",", repr(abspath(joinpath(root, dir, v, "index.html"))), "],")
         end
         println(io, "];")
         ## Create/update versions.js file for every built version.
         for v in versions
             file = joinpath(dir, v, "versions.js")
             open(file, "w") do f
-                println(f, "const PUBLISH_ROOT = '/' + $(repr(dirname(file)));")
+                println(f, "const PUBLISH_ROOT = '$(abspath(joinpath(root, dirname(file))))';")
                 println(f, "const PUBLISH_VERSION = $(repr(v));")
                 write(f, seekstart(io))
             end
