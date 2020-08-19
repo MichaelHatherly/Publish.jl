@@ -45,6 +45,19 @@ function setup(dir)
             @info "no '$readme' found, creating one."
             write(readme, "# $name\n")
         end
+        ## Create github actions workflow.
+        action = ".github/workflows/Publish.yml"
+        if isfile(action)
+            @warn "This project already has a 'Publish.yml' workflow."
+        else
+            @info "Creating a GitHub Actions workflow for deployment."
+            mkpath(dirname(action))
+            contents = read(joinpath(@__DIR__, "templates", "Publish.yml"), String)
+            open(action, "w") do handle
+                write(handle, contents)
+            end
+        end
+        ## Display a message for users to help them start a server.
         path = joinpath(pwd(), proj)
         @info "run `serve(Project($(repr(path))))` to start a server."
     end

@@ -98,5 +98,84 @@ If you're greedy and want both `pdf` and `html` then just run
 julia> serve("<path to Project.toml>", pdf, html; port=8001)
 ```
 
+## Publishing
+
+If you're writing documentation for a package you'll probably want to host it
+online somewhere in HTML form for potential users to browse through before they
+decide whether to install it or not. Even if what you're writing isn't a Julia
+package the following guide can be applied to it.
+
+`Publish` provides the function [`deploy`](#) for the purpose of creating
+output that is suitable for hosting online. This is similar in spirit to
+`Documenter`'s function that goes by same name.
+
+The [`deploy`](#) function is "layered" on top of [`html`](#) and [`pdf`](#),
+just as [`serve`](#) is also a "layer" on top of these simpler functions.
+Whereas [`serve`](#) is meant for local use, [`deploy`](#) is intended for use
+building documents for hosting online --- though it can be used locally as well
+if you'd like to see what it produces.
+
+When you run `deploy` it will create a folder in the current directory named
+after the `version` field found in `Project.toml` containing the built HTML
+documentation. For example,
+
+```julia-repl
+julia> deploy(Publish)
+```
+
+will build the HTML project defined by the `Publish` package in a folder named
+after the current `Publish` version in the current directory. You can adjust
+these settings a fair amount. See the [`deploy`](#) docs for details.
+
+!!! info "Choosing a hosting service"
+
+    For this part of the guide we'll be using GitHub for building and hosting,
+    but there is nothing in [`deploy`](#) that is *specific* to GitHub and it
+    should work fine on any other kind of service.
+
+We'll be using GitHub Actions and Pages to make building and deploying simple
+and straightforward. It's assumed that you've already got your source code
+hosted on a public GitHub repository.
+
+First, create a `gh-pages` branch for your repository. Delete *all* the
+contents of this branch and then commit and push your changes to GitHub. Switch
+back to your main development branch.
+
+Next we'll need a GitHub Actions workflow file. If you ran the [`setup`](#)
+function [earlier](# "step-two") then you'll already have a
+`.github/workflows/Publish.yml`. If not then run that now to add the file.
+Open it up in an editor and find the line with
+
+```plaintext
+julia --project=.. -e 'using Publish, USER; deploy(USER; root="/USER.jl", label="dev")'
+```
+
+and edit the `USER` to be what is needed to build your project correctly. The
+keywords used by [`deploy`](#) here are `root` and `label`:
+
+  - `root` specifies a "root" path for all deployed documentation. Since we're
+    using GitHub Pages to host your documentation it'll be hosted at
+    `<username>.github.io/<pkg>.jl/`. We need to tell [`deploy`](#) about this
+    otherwise it'll set the root to `<username>.gitgub.io/` which won't point
+    to the correct place.
+
+  - `label` is used to assign a "tracking" folder that follows any changes you
+    make, rather than just being an immutable version folder. In this case we
+    are deploying when changes are pushed to `master` and so the "tracking"
+    folder is `dev` which follows `Documenter`'s naming scheme.
+
+    !!! tip
+
+        You can change this to whatever you want. For example you could create
+        a separate actions file that runs when new releases are published to
+        your repository and have that build your project in a `stable` folder
+        to track your most recent stable documentation.
+
+Once you've committed and pushed these changes to GitHub it will start building
+your project on every commit to `master`. Read the [Actions][] documentation
+for more details on what you can change.
+
+[Actions]: https://docs.github.com/en/actions
+
 It's now time to move on to the details of how to customise your project in the
 [next section](structure.md).
