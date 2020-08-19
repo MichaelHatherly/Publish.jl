@@ -2,6 +2,9 @@
 
 *A universal document authoring package for [Julia][julia].*
 
+[![Build Status](https://travis-ci.org/MichaelHatherly/Publish.jl.svg?branch=master)](https://travis-ci.org/MichaelHatherly/Publish.jl)
+[![codecov](https://codecov.io/gh/MichaelHatherly/Publish.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/MichaelHatherly/Publish.jl)
+
 > **Disclaimer**
 >
 > Currently this package should be regarded as experimental --- a proving
