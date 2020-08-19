@@ -302,6 +302,7 @@ function pdf(source, temp=nothing)
         for (path, page) in p.pages
             rpath = relpath(path, toc_root)
             name, _ = splitext(rpath)
+            name = unix_style_path(name) # Path adjustments for Windows.
             println(includes, "\\include{$name}")
             out = tex(name)
             dir = dirname(out)
@@ -324,6 +325,26 @@ function pdf(source, temp=nothing)
     end
     return source
 end
+
+## Needed by latex engine since it doesn't like windows paths.
+if Sys.iswindows()
+    unix_style_path(path) = unix_joinpath(splitpath(path)...)
+else
+    unix_style_path(path) = path
+end
+function unix_joinpath(path::AbstractString, paths::AbstractString...)::String
+    for p in paths
+        if isabspath(p)
+            path = p
+        elseif isempty(path) || path[end] == '/'
+            path *= p
+        else
+            path *= "/" * p
+        end
+    end
+    return path
+end
+unix_joinpath(path::AbstractString) = path
 
 # ## "Doctests" Stub
 #
