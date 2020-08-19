@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Publish.jl" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="documentation" />
+    <title>Publish.jl</title>
+    <link rel="stylesheet" href="..&#x2F;normalize.css" />
+    <link rel="stylesheet" href="..&#x2F;tabulator_simple.min.css" />
+    <link rel="stylesheet" href="..&#x2F;publish.css" />
+    <link rel="stylesheet" href="..&#x2F;default.min.css" />
+    <script src="..&#x2F;versions.js"></script>
+    <script src="..&#x2F;lunr.js"></script>
+    <script src="..&#x2F;highlight.min.js"></script>
+    <script src="..&#x2F;tabulator.min.js"></script>
+    <script src="..&#x2F;julia.min.js"></script>
+    <script src="..&#x2F;julia-repl.min.js"></script>
+    <script src="..&#x2F;publish.js"></script>
+    
+</head>
+<body>
+    <div class="menu">
+        <svg id="menu-toggler" title="Contents" onclick="toggleIndexPage();" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z" fill="currentColor" /><path d="M2 12.0322C2 11.4799 2.44772 11.0322 3 11.0322H21C21.5523 11.0322 22 11.4799 22 12.0322C22 12.5845 21.5523 13.0322 21 13.0322H3C2.44772 13.0322 2 12.5845 2 12.0322Z" fill="currentColor" /><path d="M3 17.0645C2.44772 17.0645 2 17.5122 2 18.0645C2 18.6167 2.44772 19.0645 3 19.0645H21C21.5523 19.0645 22 18.6167 22 18.0645C22 17.5122 21.5523 17.0645 21 17.0645H3Z" fill="currentColor" /></svg>
+        <input id="search-input" placeholder="Search">
+        <select id="version-selector"></select>
+    </div>
+    <main id="page"><article><h1 id="files-and-related-functionality"><a href="#files-and-related-functionality" class="anchor"></a>Files and Related Functionality</h1>
+<p id="mime-type-defs">Below we have defined the <code>MIME</code> types (and extensions) that <a href="../docstrings/Publish.Publish.html"><code>Publish</code></a>
+supports. It will ignore anything not on this list.</p>
+<pre><code class="language-julia">const MIMETYPES = Dict(
+    &quot;.ipynb&quot;    =&gt; MIME(&quot;application/ipynb+json&quot;),
+    &quot;.jl&quot;       =&gt; MIME(&quot;text/julia&quot;),
+    &quot;.md&quot;       =&gt; MIME(&quot;text/markdown&quot;),
+    &quot;.toml&quot;     =&gt; MIME(&quot;application/toml&quot;),
+    &quot;.js&quot;       =&gt; MIME(&quot;text/javascript&quot;),
+    &quot;.css&quot;      =&gt; MIME(&quot;text/css&quot;),
+    &quot;.html&quot;     =&gt; MIME(&quot;text/html&quot;),
+    &quot;.tex&quot;      =&gt; MIME(&quot;text/tex&quot;),
+    &quot;.mustache&quot; =&gt; MIME(&quot;text/mustache&quot;),
+    &quot;.png&quot;      =&gt; MIME(&quot;image/png&quot;),
+    &quot;.svg&quot;      =&gt; MIME(&quot;image/svg&quot;),
+    &quot;.jpg&quot;      =&gt; MIME(&quot;image/jpeg&quot;),
+)
+</code></pre>
+<p>We also want an inverse lookup <code>Dict</code> to that we can handle converting a
+<code>MIME</code> to it’s file extension.</p>
+<pre><code class="language-julia">const EXTENSIONS = Dict(v =&gt; k for (k, v) in MIMETYPES)
+</code></pre>
+<p>Next we define a <a href="../docstrings/Publish.File.html"><code>File</code></a> type.</p>
+<pre><code class="language-julia">&quot;&quot;&quot;
+    File(; kws...)
+
+A `File` object represents a real, or &quot;virtual&quot;, file within a [`Project`](#).
+
+The following are the available keyword's supported by the `File` constructor.
+
+  - `name`: full path to the `File`. `nothing` if it is &quot;virtual&quot;.
+  - `mime`: the `MIME` type as defined [above](# &quot;mime-type-defs&quot;).
+  - `text`: Raw `String` content of the `File`.
+  - `dict`: `Dict{String,Any}` data from a parsed `.toml` file.
+  - `node`: `CommonMark.Node` abstract syntax tree from a parsed markdown file.
+&quot;&quot;&quot;
+Base.@kwdef struct File
+    name :: Union{Nothing,String}           = nothing
+    mime :: Union{Nothing,MIME}             = nothing
+    text :: Union{Nothing,String}           = nothing
+    dict :: Union{Nothing,Dict{String,Any}} = nothing
+    node :: Union{Nothing,CommonMark.Node}  = nothing
+end
+
+Base.show(io::IO, file::File) = print(io, &quot;$File($(file.name), $(file.mime))&quot;)
+</code></pre>
+<p>We also have a number of constructors for <a href="../docstrings/Publish.File.html"><code>File</code></a> objects that make it
+easier to create different variants of <code>File</code>s.</p>
+<p>This one dispatches to others further down by examining the file extensions.</p>
+<pre><code class="language-julia">function File(path::AbstractString)
+    if isfile(path)
+        _, ext = splitext(path)
+        mime = get(MIMETYPES, ext, nothing)
+        return File(mime, path)
+    else
+        @error &quot;unknown file '$path'&quot;
+    end
+end
+
+const CODE_FENCE = &quot;~&quot;^10
+</code></pre>
+<p>This <code>File</code> constructor handles Jupyter Notebooks, which are written in
+<code>JSON</code> format.</p>
+<pre><code class="language-julia">function File(mime::MIME&quot;application/ipynb+json&quot;, path::AbstractString)
+    dict = JSON.parsefile(path)
+    io = IOBuffer()
+    if haskey(dict, &quot;cells&quot;)
+        for cell in dict[&quot;cells&quot;]
+            if haskey(cell, &quot;cell_type&quot;)
+                type = cell[&quot;cell_type&quot;]
+                source = get(cell, &quot;source&quot;, &quot;&quot;)
+                if type == &quot;markdown&quot;
+                    join(io, source)
+                    println(io)
+                elseif type == &quot;code&quot;
+                    println(io, CODE_FENCE, &quot;julia&quot;)
+                    join(io, source)
+                    println(io)
+                    println(io, CODE_FENCE)
+                end
+            end
+        end
+    end
+    node = load_markdown(io)
+    return File(
+        name = path,
+        mime = mime,
+        node = node,
+        dict = frontmatter(node),
+    )
+end
+</code></pre>
+<p><code>.jl</code> files are treated as Literate Julia. This function below provides a
+reduced set of functionality compared to the Literate.jl package.</p>
+<pre><code class="language-julia">function File(mime::MIME&quot;text/julia&quot;, path::AbstractString)
+    io = IOBuffer()
+    code = String[]
+    state = :text
+    # Helper function the reduces code duplication below.
+    code_block_helper = function (state)
+        if state === :code
+            first = findfirst(l -&gt; any(!isspace, l), code)
+            last  = findlast(l -&gt; any(!isspace, l), code)
+            (first === last === nothing) || join(io, code[first:last])
+            empty!(code)
+            println(io, CODE_FENCE, &quot;\n&quot;)
+        end
+    end
+    for line in eachline(path)
+        m = match(r&quot;^(\s*)([#]*)(.*)&quot;, line)
+        if m !== nothing
+            ws, comments, rest = m[1], m[2], m[3]
+            count = length(comments)
+            if count == 1
+                # Remove single whitespace after the comment.
+                line = chop(rest; head=1, tail=0)
+                code_block_helper(state)
+                println(io, line)
+                state = :text
+            else
+                # Start a new code block.
+                state === :text &amp;&amp; println(io, CODE_FENCE, &quot;julia&quot;)
+                push!(code, string(ws, count === 0 ? &quot;&quot; : '#'^(count-1), rest, '\n'))
+                state = :code
+            end
+        end
+    end
+    # Clean up last code block.
+    code_block_helper(state)
+    node = load_markdown(io)
+    return File(
+        name = path,
+        mime = mime,
+        node = node,
+        dict = frontmatter(node),
+    )
+end
+</code></pre>
+<p>Markdown files, <code>.md</code> extension, is pretty simple to handle.</p>
+<pre><code class="language-julia">function File(mime::MIME&quot;text/markdown&quot;, path::AbstractString)
+    node = open(load_markdown, path)
+    return File(
+        name = path,
+        mime = mime,
+        node = node,
+        dict = frontmatter(node)
+    )
+end
+</code></pre>
+<p>As is the <code>.toml</code> filetype. For both we’re just using the provided packages
+that parse those file types.</p>
+<pre><code class="language-julia">function File(mime::MIME&quot;application/toml&quot;, path::AbstractString)
+    dict = TOML.parsefile(path)
+    return File(
+        name = path,
+        mime = mime,
+        dict = dict,
+    )
+end
+</code></pre>
+<p>There’s also a number of file types that we don’t want to do any kind of
+parsing to. These are listed below and just produce a raw <code>File</code>.</p>
+<pre><code class="language-julia">const SIMPLE_FILETYPES = Union{
+    MIME&quot;text/javascript&quot;,
+    MIME&quot;text/css&quot;,
+    MIME&quot;text/html&quot;,
+    MIME&quot;text/tex&quot;,
+    MIME&quot;text/mustache&quot;,
+}
+File(m::SIMPLE_FILETYPES, p::AbstractString) = File(name=p, mime=m, text=read(p, String))
+</code></pre>
+<p>A nice error message is provided for other mime types.</p>
+<pre><code class="language-julia">function File(::Nothing, path::AbstractString)
+    supported = join(repr.(keys(MIMETYPES)), &quot;, &quot;, &quot;, and &quot;)
+    @error &quot;unsupported file '$path'. Only $supported are supported.&quot;
+end
+</code></pre>
+<h2 id="file-utilities"><a href="#file-utilities" class="anchor"></a>File Utilities</h2>
+<p>Our markdown parser setup:</p>
+<pre><code class="language-julia">&quot;&quot;&quot;
+    init_markdown_parser()
+
+Create a new `CommonMark.Parser` object with the extensions we want to support
+in [`Publish`](#).
+&quot;&quot;&quot;
+function init_markdown_parser()
+    cm = CommonMark
+    return cm.enable!(cm.Parser(), [
+        cm.AdmonitionRule(),
+        cm.AttributeRule(),
+        cm.AutoIdentifierRule(),
+        cm.CitationRule(),
+        cm.DollarMathRule(),
+        cm.FootnoteRule(),
+        cm.FrontMatterRule(toml=TOML.parse),
+        cm.MathRule(),
+        cm.RawContentRule(),
+        cm.TableRule(),
+        cm.TypographyRule(),
+    ])
+end
+</code></pre>
+<p>Parsing of markdown files:</p>
+<pre><code class="language-julia">&quot;&quot;&quot;
+    load_markdown(io, [parser])
+
+Parse the contents found in `io` as markdown using the provided `parser` or the
+default created by [`init_markdown_parser`](#).
+&quot;&quot;&quot;
+load_markdown(io::IO, parser=init_markdown_parser()) = parser(seekstart(io))
+</code></pre>
+<p>Extraction of frontmatter content from a markdown AST:</p>
+<pre><code class="language-julia">&quot;&quot;&quot;
+    frontmatter(ast) -&gt; Dict{String,Any}
+
+Return the frontmatter content of the given `ast` if it exists, otherwise
+return an empty `Dict`.
+&quot;&quot;&quot;
+function frontmatter(ast::CommonMark.Node)
+    CommonMark.isnull(ast.first_child)           &amp;&amp; return Dict{String,Any}()
+    ast.first_child.t isa CommonMark.FrontMatter &amp;&amp; return ast.first_child.t.data
+    return Dict{String,Any}()
+end
+</code></pre>
+</article>
+        <div id="page-navigation">
+            <a id="previous-page" title="Previous" href="Publish.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="projects.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+        </div>
+    </main>
+    <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
+<ol style="margin: 0 auto; max-width: 350px">
+<li><a href="../README.html">Introduction</a></li>
+<li><a href="../docs/getting_started.html">Getting Started</a></li>
+<li><a href="../docs/structure.html">Project Structure</a></li>
+<li><a href="../docs/references.html">Cross Referencing</a></li>
+<li><a href="../docs/config.html">Configuration</a></li>
+<li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/sources.html">Source Types</a></li>
+<li><a href="../docs/syntax.html">Markdown Syntax</a></li>
+</ol>
+<p style="text-align: center"><strong>Examples</strong></p>
+<ul style="list-style: none; margin: 0 auto; max-width: 350px">
+<li><a href="../examples/basics.html">Basics</a></li>
+</ul>
+<p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
+<p style="text-align: center"><strong>SOURCE</strong></p>
+<ul style="list-style: none; margin: 0 auto; max-width: 350px">
+<li><a href="Publish.html">Publish.jl</a></li>
+<li><a href="files.html">files.jl</a></li>
+<li><a href="projects.html">projects.jl</a></li>
+<li><a href="targets.html">targets.jl</a></li>
+<li><a href="docstrings.html">docstrings.jl</a></li>
+<li><a href="tools.html">tools.jl</a></li>
+</ul>
+<p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
+</nav>
+    <footer>
+        Build with <a target="_blank" href="https://github.com/MichaelHatherly/Publish.jl">Publish.jl</a> and the <a target="_blank" href="https://julialang.org">Julia Language.</a>
+    </footer>
+    <script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
