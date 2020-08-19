@@ -99,6 +99,69 @@ viewer. If your viewer supports auto-updates then when you make changes to
 <p>If you’re greedy and want both <code>pdf</code> and <code>html</code> then just run</p>
 <pre><code class="language-julia-repl">julia&gt; serve(&quot;&lt;path to Project.toml&gt;&quot;, pdf, html; port=8001)
 </code></pre>
+<h2 id="publishing"><a href="#publishing" class="anchor"></a>Publishing</h2>
+<p>If you’re writing documentation for a package you’ll probably want to host it
+online somewhere in HTML form for potential users to browse through before they
+decide whether to install it or not. Even if what you’re writing isn’t a Julia
+package the following guide can be applied to it.</p>
+<p><code>Publish</code> provides the function <a href="../docstrings/Publish.deploy.html"><code>deploy</code></a> for the purpose of creating
+output that is suitable for hosting online. This is similar in spirit to
+<code>Documenter</code>’s function that goes by same name.</p>
+<p>The <a href="../docstrings/Publish.deploy.html"><code>deploy</code></a> function is “layered” on top of <a href="../docstrings/Publish.html.html"><code>html</code></a> and <a href="../docstrings/Publish.pdf.html"><code>pdf</code></a>,
+just as <a href="../docstrings/Publish.serve.html"><code>serve</code></a> is also a “layer” on top of these simpler functions.
+Whereas <a href="../docstrings/Publish.serve.html"><code>serve</code></a> is meant for local use, <a href="../docstrings/Publish.deploy.html"><code>deploy</code></a> is intended for use
+building documents for hosting online — though it can be used locally as well
+if you’d like to see what it produces.</p>
+<p>When you run <code>deploy</code> it will create a folder in the current directory named
+after the <code>version</code> field found in <code>Project.toml</code> containing the built HTML
+documentation. For example,</p>
+<pre><code class="language-julia-repl">julia&gt; deploy(Publish)
+</code></pre>
+<p>will build the HTML project defined by the <code>Publish</code> package in a folder named
+after the current <code>Publish</code> version in the current directory. You can adjust
+these settings a fair amount. See the <a href="../docstrings/Publish.deploy.html"><code>deploy</code></a> docs for details.</p>
+<div class="admonition info"><p class="admonition-title">Choosing a hosting service</p>
+<p>For this part of the guide we’ll be using GitHub for building and hosting,
+but there is nothing in <a href="../docstrings/Publish.deploy.html"><code>deploy</code></a> that is <em>specific</em> to GitHub and it
+should work fine on any other kind of service.</p>
+</div>
+<p>We’ll be using GitHub Actions and Pages to make building and deploying simple
+and straightforward. It’s assumed that you’ve already got your source code
+hosted on a public GitHub repository.</p>
+<p>First, create a <code>gh-pages</code> branch for your repository. Delete <em>all</em> the
+contents of this branch and then commit and push your changes to GitHub. Switch
+back to your main development branch.</p>
+<p>Next we’ll need a GitHub Actions workflow file. If you ran the <a href="../docstrings/Publish.setup.html"><code>setup</code></a>
+function <a href="getting_started.html#step-two">earlier</a> then you’ll already have a
+<code>.github/workflows/Publish.yml</code>. If not then run that now to add the file.
+Open it up in an editor and find the line with</p>
+<pre><code class="language-plaintext">julia --project=.. -e 'using Publish, USER; deploy(USER; root=&quot;/USER.jl&quot;, label=&quot;dev&quot;)'
+</code></pre>
+<p>and edit the <code>USER</code> to be what is needed to build your project correctly. The
+keywords used by <a href="../docstrings/Publish.deploy.html"><code>deploy</code></a> here are <code>root</code> and <code>label</code>:</p>
+<ul>
+<li>
+<p><code>root</code> specifies a “root” path for all deployed documentation. Since we’re
+using GitHub Pages to host your documentation it’ll be hosted at
+<code>&lt;username&gt;.github.io/&lt;pkg&gt;.jl/</code>. We need to tell <a href="../docstrings/Publish.deploy.html"><code>deploy</code></a> about this
+otherwise it’ll set the root to <code>&lt;username&gt;.gitgub.io/</code> which won’t point
+to the correct place.</p>
+</li>
+<li>
+<p><code>label</code> is used to assign a “tracking” folder that follows any changes you
+make, rather than just being an immutable version folder. In this case we
+are deploying when changes are pushed to <code>master</code> and so the “tracking”
+folder is <code>dev</code> which follows <code>Documenter</code>’s naming scheme.</p>
+<div class="admonition tip"><p class="admonition-title">Tip</p>
+<p>You can change this to whatever you want. For example you could create
+a separate actions file that runs when new releases are published to
+your repository and have that build your project in a <code>stable</code> folder
+to track your most recent stable documentation.</p>
+</div></li>
+</ul>
+<p>Once you’ve committed and pushed these changes to GitHub it will start building
+your project on every commit to <code>master</code>. Read the <a href="https://docs.github.com/en/actions">Actions</a> documentation
+for more details on what you can change.</p>
 <p>It’s now time to move on to the details of how to customise your project in the
 <a href="structure.html">next section</a>.</p>
 </article>
