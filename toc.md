@@ -3,7 +3,7 @@
 
 {style="margin: 0 auto; max-width: 350px"}
  1. [Introduction](README.md)
- 2. [Getting Started](docs/getting-started.md)
+ 2. [Getting Started](docs/getting_started.md)
  3. [Project Structure](docs/structure.md)
  4. [Cross Referencing](docs/references.md)
  5. [Configuration](docs/config.md)

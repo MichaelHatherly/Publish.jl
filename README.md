@@ -42,7 +42,7 @@ julia> serve(Publish)
 The above will install `Publish`, import it, and then start up a local
 web-server for `Publish`'s own documentation --- the content you're reading
 right now. Open the link in your web browser and then continue on to the next
-section, [Getting Started](docs/getting-started.md).
+section, [Getting Started](docs/getting_started.md).
 
 [commonmark]: https://commonmark.org/
 [CommonMark.jl]: https://www.github.com/MichaelHatherly/CommonMark.jl
