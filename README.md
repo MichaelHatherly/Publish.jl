@@ -2,8 +2,9 @@
 
 *A universal document authoring package for [Julia][julia].*
 
-[![Build Status](https://travis-ci.org/MichaelHatherly/Publish.jl.svg?branch=master)](https://travis-ci.org/MichaelHatherly/Publish.jl)
-[![codecov](https://codecov.io/gh/MichaelHatherly/Publish.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/MichaelHatherly/Publish.jl)
+<!--written as raw html to avoid including these in the generated PDFs-->
+<a href="https://travis-ci.org/MichaelHatherly/Publish.jl"><img src="https://travis-ci.org/MichaelHatherly/Publish.jl.svg?branch=master" alt="Build Status" /></a>
+<a href="https://codecov.io/gh/MichaelHatherly/Publish.jl"><img src="https://codecov.io/gh/MichaelHatherly/Publish.jl/branch/master/graph/badge.svg" alt="codecov" /></a>
 
 > **Disclaimer**
 >
