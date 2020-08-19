@@ -228,11 +228,13 @@ function relative_paths(f, p::Project, pub::AbstractDict, file::AbstractString)
             return value
         else
             path = joinpath(root, value)
-            return isfile(path) ? relpath(value, file_dir) : value
+            return _isfile(path) ? relpath(value, file_dir) : value
         end
     end
     f(temp_pub)
 end
+
+_isfile(s::AbstractString) = length(s) ≤ 144 && isfile(s) # TODO: hack for ENAMETOOLONG.
 
 with_replacement(f, value) = value
 with_replacement(f, value::AbstractString) = f(value)
