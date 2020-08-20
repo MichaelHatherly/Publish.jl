@@ -310,8 +310,8 @@ function watch(p::Project, actions...; dict=IdDict{Project,LiveServer.SimpleWatc
                 delete!(dict, each) # And remove it from the cache.
             end
             ## Run user-provided actions after each update.
-            for each in actions
-                each(p, path)
+            @sync for each in actions
+                @async each(p, path)
             end
         end
         LiveServer.set_callback!(sw, callback)

@@ -204,6 +204,48 @@ function smartlink(
         return obj
     end
 end
+function smartlink(
+    ::MIME"text/html",
+    obj::CommonMark.Image,
+    node::CommonMark.Node,
+    env,
+    p::Project,
+    html_file::AbstractString,
+    page
+)
+    ## Only handle relative URLS.
+    if !isabspath(obj.destination)
+        uri = parse(HTTP.URIs.URI, obj.destination)
+        ## Skip anything that looks non-local.
+        if isempty(uri.scheme)
+            toc_root = tocroot(p)
+            if get(env, "#toc", false)
+                # Adjust paths due to inclusion of a toc, which has a different path.
+                rpath = joinpath(".", relpath(html_file, toc_root))
+                src = joinpath(toc_root, obj.destination)
+                dst = relpath(obj.destination, dirname(rpath))
+                if isfile(src)
+                    cp(src, dst; force=true, follow_symlinks=true)
+                    obj = deepcopy(obj)
+                    obj.destination = dst
+                else
+                    ## Table of contents won't generate build time images so
+                    ## warn if we can't find the `src` file.
+                    @warn "'$(html_file)': no image found '$(obj.destination)'."
+                end
+            else
+                src = joinpath(dirname(page.name), obj.destination)
+                dst = joinpath(dirname(html_file), obj.destination)
+                if isfile(src)
+                    cp(src, dst; force=true, follow_symlinks=true)
+                else
+                    isfile(dst) || @warn "'$(page.name)': no image found '$(obj.destination)'."
+                end
+            end
+        end
+    end
+    return obj
+end
 smartlink(mime, obj, node, env, p, html_file, page) = obj
 
 # And some other helpers needed for [`html`](#) generation.
@@ -384,11 +426,10 @@ function serve(source, targets...=html; kws...)
     p = from_source(source)
     w = WatchedProject(p, targets...)
     try
-        for target in targets
-            target(w; kws...)
+        @sync for target in targets
+            @async target(w; kws...)
         end
     finally
-        wait() # Wait until all tasks done.
         stop(w)
     end
     return source
@@ -397,22 +438,14 @@ end
 function html(w::WatchedProject; port=8000, kws...)
     dir = w.dirs[html]
     html(w.p, dir)
-    @async LiveServer.serve(; dir=dir, port=port)
-end
-
-function search(w::WatchedProject; kws...)
-    if haskey(w.dirs, html)
-        ## Search data is written to the HTML directory.
-        dir = w.dirs[html]
-        search(w.p, dir)
-    end
+    LiveServer.serve(; dir=dir, port=port)
 end
 
 function pdf(w::WatchedProject; kws...)
     dir = w.dirs[pdf]
     pdf(w.p, dir)
     file = joinpath(dir, w.p.env["name"] * ".pdf")
-    run(`$PDF_VIEWER $file`; wait=false)
+    run(`$PDF_VIEWER $file`)
 end
 
 # ## Utilities
