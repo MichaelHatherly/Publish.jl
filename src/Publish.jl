@@ -1,93 +1,62 @@
-# # The Publish.jl Literate Source Code
+# # Publish.jl Literate Source Code
 #
-# !!! info "A quick note..."
+# This package can use Julia source files as a content source, similar to
+# normal markdown files. It uses the same syntax to mark source lines as either
+# markdown content or codeblocks. You can read about the details of literate
+# Julia files [here](# "Literate Julia").
 #
-#     It's worth pointing out here that your own package doesn't need to follow
-#     this style of writing it in a literate way and probably shouldn't. This
-#     has been done for [`Publish`](#) so as to test out all of it's available
-#     functionality.
+# !!! info "Literate Programming"
 #
-# Welcome to the [`Publish`](#) package source code. Since [`Publish`](#)
-# supports a subset of [Literate.jl][] syntax the source for this package
-# itself makes a good test case for it.
-#
-# [Literate.jl]: https://github.com/fredrikekre/Literate.jl
-#
-# The content below and on the subsequent pages is all drawn from the source
-# code of this package found under the `src/` directory.
-#
-# Displayed code blocks are the source code of this package and any markdown
-# content is a comment line starting with `#`.
-#
-# Let's start off our exploration of the package with the `Publish` module
-# definition as well as a docstring that appears prior to it.
-"""
-The `Publish` package provides tools for composing [markdown files](#
-"Source Types"), [Jupyter Notebooks](#), and [Literate Julia](#) files into
-[HTML](# "`html`") and [PDF](# "`pdf`") documents in a declarative and
-reproducable way.
-
-`Publish` documents are represented by [`Project`](#) objects that store the
-information presented in a `Publish` [configuration](#) file, which also
-happens to be the same `Project.toml` file used by Julia's `Pkg` package
-manager.
-
-To get started using `Publish` by spinning up a web-server for a package
-of your choosing run the following:
-
-```julia-repl
-julia> serve(MyPackage)
-✓ LiveServer listening on http://localhost:8000/ ...
-  (use CTRL+C to shut down)
-```
-
-See the [getting started](#) section of the manual for more details.
-"""
+#     These source file only make use of literate features as a test case for
+#     the package. They should not be thought of as a showcase for literate
+#     programming itself.
 module Publish
 
+# ## Exports
+
+export html, pdf, serve, deploy, setup
+
 # ## Imports
-#
-# Below we have all the imported packages that [`Publish`](#) itself uses.
-import Base.Iterators
+
 import CommonMark
-import HTTP
+import DataStructures
 import IterTools
 import JSON
 import LiveServer
 import Mustache
-import OrderedCollections: OrderedDict
-import Pkg, Pkg.Artifacts, Pkg.TOML
+import Pkg
+import Pkg.TOML
+import Requires
 import Tectonic
 
-# ## Included Files
-#
-# And also the `include`d files that make up this package.
-include("files.jl")
+using FilePathsBase
+using FileTrees
+
+# ## Configuration
+
+const DAGGER = Ref(false)
+const LAZY = Ref(true)
+
+# ## Includes
+
 include("projects.jl")
-include("targets.jl")
-include("docstrings.jl")
+include("themes.jl")
+include("load.jl")
+include("save.jl")
+include("serve.jl")
+include("deploy.jl")
 include("tools.jl")
+include("utilities.jl")
 
-# ## Exports
+# ## Package Initialisation
 #
-# As well as the few functions and types that [`Publish`](#) exports for public
-# use.
-export serve, html, pdf, setup, deploy
+# Revise.jl is an optional dependency, we use Requires.jl to define a
+# [`revise`](#) method when it is available that triggers `Revise.revise`.
 
-# This is the end of our `src/Publish.jl` source file. The rest of the source
-# code can be found by browsing further through this document.
-#
-# We'll hide the `end` keyword on the last line of this file by using the
-# [Attributes](#) syntax provided by the [CommonMark.jl][] package. By writing
-#
-# ```plaintext
-# # {style="display:none"}
-# ```
-#
-# as the last line of a comment block the subsequent code block will not be
-# display in the resulting output.
-#
-# [CommonMark.jl]: https://github.com/MichaelHatherly/CommonMark.jl
-#
-# {style="display:none"}
+function __init__()
+    Requires.@require Revise="295af30f-e4ad-537b-8983-00126c2a3abe" begin
+        revise(::Project) = Revise.revise()
+    end
+end
+
 end # module

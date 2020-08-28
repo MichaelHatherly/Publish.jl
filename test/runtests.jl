@@ -6,7 +6,7 @@ using Test, Publish
     mktempdir() do dir
         cd(dir) do
             mkdir("project")
-            setup("project")
+            setup("project"; pkg=false)
             @test isfile(joinpath("project", "Project.toml"))
             @test isfile(joinpath("project", "README.md"))
 

@@ -23,13 +23,16 @@
 {style="text-align: center"}
 **SOURCE**
 
-{style="list-style: none; margin: 0 auto; max-width: 350px"}
-  - [Publish.jl](src/Publish.jl)
-  - [files.jl](src/files.jl)
-  - [projects.jl](src/projects.jl)
-  - [targets.jl](src/targets.jl)
-  - [docstrings.jl](src/docstrings.jl)
-  - [tools.jl](src/tools.jl)
+{style="margin: 0 auto; max-width: 350px"}
+  - [`Publish.jl`](src/Publish.jl)
+  - [`projects.jl`](src/projects.jl)
+  - [`themes.jl`](src/themes.jl)
+  - [`load.jl`](src/load.jl)
+  - [`save.jl`](src/save.jl)
+  - [`serve.jl`](src/serve.jl)
+  - [`deploy.jl`](src/deploy.jl)
+  - [`tools.jl`](src/tools.jl)
+  - [`utilities.jl`](src/utilities.jl)
 
 {style="text-align: center"}
 [**LICENSE**](LICENSE.md)
