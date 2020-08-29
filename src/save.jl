@@ -10,10 +10,10 @@ function save(f, tree)
     if DAGGER[]
         FileTrees.save(f, tree)
     else
-        @sync for file in FileTrees.files(tree)
+        for file in FileTrees.files(tree)
             dir = dirname(file)
             isdir(dir) || mkpath(dir)
-            @async f(file)
+            f(file)
         end
     end
 end
@@ -140,9 +140,12 @@ function html_link(obj, node, project, pub, path)
         end
     elseif startswith(obj.destination, "#")
         ## Skip these kind of links, they're just page-local.
-    elseif haskey(pub, "mapping") && haskey(pub["mapping"], Path(path))
-        ## If it's in the project's page mapping then we change the extension.
-        obj.destination = with_extension(obj.destination, "html")
+    else
+        dst = Path(normpath(dirname(string(path)), obj.destination))
+        if haskey(pub["mapping"], dst)
+            ## If it's in the project's page mapping then we change the extension.
+            obj.destination = with_extension(obj.destination, "html")
+        end
     end
     return obj
 end
