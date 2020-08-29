@@ -32,7 +32,7 @@ So long as you do not access arbitrary global data and maintain suitable
 reproducible. If you’re needing fully reproducible environments then you should
 also be saving the <code>Manifest.toml</code> file to track exact versions of
 dependencies.  For details on this topic please see the Pkg.jl docs on
-<a href="https://julialang.github.io/Pkg.jl/v1/toml-files/#Manifest.html">Manifest.toml files</a>.</p>
+<a href="https://julialang.github.io/Pkg.jl/v1/toml-files/#Manifest.toml-1">Manifest.toml files</a>.</p>
 <p>The heart of <code>Publish</code>’s configuration is the <code>[publish]</code> section of your
 <code>Project.toml</code> file. This is where everything related to <code>Publish</code> is stored.
 You’ve already seen some of it in <a href="structure.html#pages-list">action</a>. Below we’ll go over
@@ -60,7 +60,7 @@ contain a different list of names, or it might be the same.</p>
 </li>
 <li>
 <p><strong><code>lang</code></strong> — <code>String</code> of the document language. What language is the
-project written in, use <a href="https://www.w3.org/International/articles/language-tags/.html">ISO Language Codes</a>.</p>
+project written in, use <a href="https://www.w3.org/International/articles/language-tags/">ISO Language Codes</a>.</p>
 </li>
 <li>
 <p><strong><code>keywords</code></strong> — <code>Vector{String}</code> of document keywords. Useful for
