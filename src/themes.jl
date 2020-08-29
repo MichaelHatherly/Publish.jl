@@ -15,7 +15,7 @@ module Themes
 """
 The "default" theme used by this package.
 """
-default() = abspath(joinpath(@__DIR__, "..", "_themes", "default"))
+const default = abspath(joinpath(@__DIR__, "..", "_themes", "default"))
 
 end
 
@@ -34,13 +34,17 @@ function defined by the value of the key.
 The themes included with this package are listed in the [`Themes`](#) module.
 """
 function loadtheme(tree::FileTree, env::AbstractDict)
-    name = binding(env["publish"]["theme"])
-    root = (Docs.defined(name) ? Docs.resolve(name) : Themes.default)()
-    toml = joinpath(root, "Theme.toml")
-    isfile(toml) || error("'$toml' theme does not exist.")
-    dict = TOML.parsefile(toml)
+    theme = env["publish"]["theme"]
+    file = joinpath(path(tree), theme, "Theme.toml")
+    if !isfile(file)
+        bind = binding(theme)
+        dir = joinpath(Docs.defined(bind) ? Docs.resolve(bind) : Themes.default)
+        file = joinpath(dir, "Theme.toml")
+        isfile(file) || error("'$theme' theme does not exist.")
+    end
+    dict = TOML.parsefile(string(file))
     env = rmerge(env, Dict("publish" => dict))
-    tree′ = FileTree(root)
+    tree′ = FileTree(dirname(file))
     tree′ = FileTrees.load(tree′; lazy=LAZY[]) do file
         loadfile(env, joinpath(basename(tree′), path(file)))
     end

@@ -1,7 +1,5 @@
 using Test, Publish
 
-test_theme() = joinpath(@__DIR__, "_projects", "theme_test", "_theme")
-
 @testset "Publish" begin
     @testset "Custom Themes" begin
         path = joinpath(@__DIR__, "_projects/theme_test/Project.toml")
@@ -18,8 +16,8 @@ test_theme() = joinpath(@__DIR__, "_projects", "theme_test", "_theme")
                     @test isfile("search.html")
                     @test isfile("search.json")
                     @test isfile("index.html")
-                    @test contains(read("README.html", String), "<!--test-template-->")
-                    @test contains(read("search.html", String), "<!--test-template-->")
+                    @test occursin("<!--test-template-->", read("README.html", String))
+                    @test occursin("<!--test-template-->", read("search.html", String))
                 end
             end
         end

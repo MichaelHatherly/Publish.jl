@@ -5,7 +5,7 @@ function loadtoml(path::AbstractPath, globals)
         "deps" => Dict{String,String}(),
         "publish" => Dict(
             "ignore" => [],
-            "theme" => string(Themes.default),
+            "theme" => "Publish.Themes.default",
             "config" => "Project.toml",
             "pages" => ["README.md"],
             "toc" => "toc.md",
