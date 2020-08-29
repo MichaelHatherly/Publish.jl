@@ -8,6 +8,7 @@
  4. [Cross Referencing](docs/references.md)
  5. [Configuration](docs/config.md)
  6. [Templates](docs/templates.md)
+ 6. [Custom Themes](docs/themes.md)
  7. [Source Types](docs/sources.md)
  8. [Markdown Syntax](docs/syntax.md)
 
