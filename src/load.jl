@@ -4,6 +4,7 @@ function loadtoml(path::AbstractPath, globals)
     defaults = Dict{String,Any}(
         "deps" => Dict{String,String}(),
         "publish" => Dict(
+            "ignore" => [],
             "theme" => string(Themes.default),
             "config" => "Project.toml",
             "pages" => ["README.md"],
@@ -13,8 +14,23 @@ function loadtoml(path::AbstractPath, globals)
     return rmerge(defaults, open(TOML.parse, path), globals)
 end
 
+rtree(f, d) = isdir(d) ? (d => [cd(()->rtree(f, x), d) for x in readdir(d) if f(x)]) : d
+mktree(dir::Union{AbstractPath,AbstractString}, f=x->true) = FileTrees.maketree(rtree(f, abspath(dir)))
+
 function loadtree(env::AbstractDict, p::AbstractPath)
-    tree = FileTree(isfile(p) ? dirname(p) : p)[IGNORE_PATHS]
+    ## Custom ignore patterns from configuration are regular expressions.
+    ignore = map(Regex, env["publish"]["ignore"])
+    fn = function (path::AbstractString)
+        ## Always ignore anything starting with '.' or '_'.
+        startswith(path, ['.', '_']) && return true
+        for each in ignore
+            occursin(each, path) && return true
+        end
+        return false
+    end
+    ## Construct the initial FileTree manually since this avoids reading in
+    ## huge directories that exceed open file limit on default OSX.
+    tree = mktree(string(isfile(p) ? dirname(p) : p), !fn)
     return FileTrees.load(tree; lazy=LAZY[]) do file
         loadfile(env, joinpath(basename(tree), path(file)))
     end
