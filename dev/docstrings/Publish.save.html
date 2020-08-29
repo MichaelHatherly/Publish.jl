@@ -25,18 +25,21 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='visible_modules'>
-<p><em><code>private</code></em> <strong><code>visible_modules</code></strong> — <code>function</code></p>
+    <main id="page"><article><div class='docs' id='save'>
+<p><code>private</code> <code>save</code> — <code>function</code></p>
 <div class='doc' id='1'>
-<pre><code>visible_modules(env)
+<pre><code>save(f, tree)
 </code></pre>
-<p>What modules are available from the given project environment <code>env</code>.</p>
+<p>Wrapper function for <code>FileTrees.save</code> to configure whether to use parallel
+saving using <code>FileTrees</code> or to just use a basic serial implementation.
+Typically the simpler serial code will be faster unless the project is very
+large.</p>
 </div>
 </div>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.update!.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.watch.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="Publish.sandbox.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="Publish.serve.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
@@ -56,13 +59,16 @@
 </ul>
 <p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
 <p style="text-align: center"><strong>SOURCE</strong></p>
-<ul style="list-style: none; margin: 0 auto; max-width: 350px">
-<li><a href="../src/Publish.html">Publish.jl</a></li>
-<li><a href="../src/files.html">files.jl</a></li>
-<li><a href="../src/projects.html">projects.jl</a></li>
-<li><a href="../src/targets.html">targets.jl</a></li>
-<li><a href="../src/docstrings.html">docstrings.jl</a></li>
-<li><a href="../src/tools.html">tools.jl</a></li>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="projects.html"><code>projects.jl</code></a></li>
+<li><a href="themes.html"><code>themes.jl</code></a></li>
+<li><a href="load.html"><code>load.jl</code></a></li>
+<li><a href="save.html"><code>save.jl</code></a></li>
+<li><a href="serve.html"><code>serve.jl</code></a></li>
+<li><a href="deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="tools.html"><code>tools.jl</code></a></li>
+<li><a href="utilities.html"><code>utilities.jl</code></a></li>
 </ul>
 <p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
 </nav>

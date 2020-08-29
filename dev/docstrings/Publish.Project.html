@@ -26,26 +26,33 @@
         <select id="version-selector"></select>
     </div>
     <main id="page"><article><div class='docs' id='Project'>
-<p><em><code>private</code></em> <strong><code>Project</code></strong> — <code>struct</code></p>
+<p><code>private</code> <code>Project</code> — <code>struct</code></p>
 <div class='doc' id='1'>
 <pre><code>struct Project
 </code></pre>
-<p>Holds all the data needed to represent a <code>Publish</code> “project”.</p>
-<p><code>Project</code> objects can be constructed by either providing a <code>Module</code> or a
-<code>Project.toml</code> file.</p>
+<p>A <code>struct</code> that holds details of a “project”, which is defined as</p>
+<blockquote>
+<p>a configuration file (in TOML format), along with a collection of associated
+source and support files.</p>
+</blockquote>
+<p>“Projects” can be created in two ways, by <code>Module</code>, or configuration path.</p>
 </div>
 <div class='doc' id='2'>
-<pre><code>Project(path, [loaded, parent]; [globals])
+<pre><code>Project(mod)
 </code></pre>
-<p>A constructor for <a href="Publish.Project.html"><code>Project</code></a> structs. Takes a <code>path</code> representing a
-<code>Project.toml</code> file. Optional arguments <code>loaded</code> and <code>parent</code> are for internal
-use only.</p>
+<p>Create a new <a href="Publish.Project.html"><code>Project</code></a> object from the given module <code>mod</code>.</p>
+</div>
+<div class='doc' id='3'>
+<pre><code>Project(path)
+</code></pre>
+<p>Create a new <a href="Publish.Project.html"><code>Project</code></a> object from the given configuration <code>path</code>. The
+<code>path</code> must be a TOML file.</p>
 </div>
 </div>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.File.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.Publish.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="Publish.IGNORE_LIST.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="Publish.Themes.default.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
@@ -65,13 +72,16 @@ use only.</p>
 </ul>
 <p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
 <p style="text-align: center"><strong>SOURCE</strong></p>
-<ul style="list-style: none; margin: 0 auto; max-width: 350px">
-<li><a href="../src/Publish.html">Publish.jl</a></li>
-<li><a href="../src/files.html">files.jl</a></li>
-<li><a href="../src/projects.html">projects.jl</a></li>
-<li><a href="../src/targets.html">targets.jl</a></li>
-<li><a href="../src/docstrings.html">docstrings.jl</a></li>
-<li><a href="../src/tools.html">tools.jl</a></li>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="projects.html"><code>projects.jl</code></a></li>
+<li><a href="themes.html"><code>themes.jl</code></a></li>
+<li><a href="load.html"><code>load.jl</code></a></li>
+<li><a href="save.html"><code>save.jl</code></a></li>
+<li><a href="serve.html"><code>serve.jl</code></a></li>
+<li><a href="deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="tools.html"><code>tools.jl</code></a></li>
+<li><a href="utilities.html"><code>utilities.jl</code></a></li>
 </ul>
 <p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
 </nav>

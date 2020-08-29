@@ -26,11 +26,11 @@
         <select id="version-selector"></select>
     </div>
     <main id="page"><article><h1 id="markdown-syntax"><a href="#markdown-syntax" class="anchor"></a>Markdown Syntax</h1>
-<p>All standard <a href="https://commonmark.org/">commonmark</a> syntax is supported and provide by the
-<a href="https://www.github.com/MichaelHatherly/CommonMark.jl">CommonMark.jl</a> package. What follows on this page is a summary of the
+<p>All standard <a href="https://commonmark.org/.html">commonmark</a> syntax is supported and provide by the
+<a href="https://www.github.com/MichaelHatherly/CommonMark.html">CommonMark.jl</a> package. What follows on this page is a summary of the
 additional syntax extensions provided through <code>Publish</code>. Refer to the
 <em>commonmark spec</em> for details on the standard syntax. The extensions that
-<code>Publish</code> uses are documented in more detail in the <a href="https://www.github.com/MichaelHatherly/CommonMark.jl">CommonMark.jl</a>
+<code>Publish</code> uses are documented in more detail in the <a href="https://www.github.com/MichaelHatherly/CommonMark.html">CommonMark.jl</a>
 README.</p>
 <h2 id="admonitions"><a href="#admonitions" class="anchor"></a>Admonitions</h2>
 <p>These are specially marked blocks of markdown text that will be rendered
@@ -66,9 +66,9 @@ two   = &quot;2&quot;
 <h2 id="auto-identifiers"><a href="#auto-identifiers" class="anchor"></a>Auto-Identifiers</h2>
 <p>This rule assigns page-unique <code>:id</code> attributes to all headings by stripping
 whitespace, lowercasing, and Unicode transformation. It is modelled on the
-behaviour of <a href="https://pandoc.org">Pandoc</a>’s auto identifiers.</p>
+behaviour of <a href="https://pandoc.html">Pandoc</a>’s auto identifiers.</p>
 <h2 id="citations"><a href="#citations" class="anchor"></a>Citations</h2>
-<p>Citations can be included using the <code>@citeid</code> syntax in the same way as <a href="https://pandoc.org">Pandoc</a>.</p>
+<p>Citations can be included using the <code>@citeid</code> syntax in the same way as <a href="https://pandoc.html">Pandoc</a>.</p>
 <h2 id="footnotes"><a href="#footnotes" class="anchor"></a>Footnotes</h2>
 <p>These can be added on a per-page basis. Cross-document footnotes is not supported.</p>
 <pre><code class="language-plaintext">A paragraph containing[^1] a footnote.
@@ -77,7 +77,7 @@ behaviour of <a href="https://pandoc.org">Pandoc</a>’s auto identifiers.</p>
 </code></pre>
 <p>Numbers and single word identifiers can be used as footnote names.</p>
 <h1 id="front-matter"><a href="#front-matter" class="anchor"></a>Front Matter</h1>
-<p>At the start of any markdown file you can add a fenced block of <a href="https://github.com/toml-lang/toml">TOML</a> content.</p>
+<p>At the start of any markdown file you can add a fenced block of <a href="https://github.com/toml-lang/toml.html">TOML</a> content.</p>
 <pre><code class="language-plaintext">+++
 key = &quot;value&quot; # pairs
 +++
@@ -152,13 +152,13 @@ commonmark parser supports raw HTML tags by default.</p>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
 <ol style="margin: 0 auto; max-width: 350px">
 <li><a href="../README.html">Introduction</a></li>
-<li><a href="getting_started.html">Getting Started</a></li>
-<li><a href="structure.html">Project Structure</a></li>
-<li><a href="references.html">Cross Referencing</a></li>
-<li><a href="config.html">Configuration</a></li>
-<li><a href="templates.html">Templates</a></li>
-<li><a href="sources.html">Source Types</a></li>
-<li><a href="syntax.html">Markdown Syntax</a></li>
+<li><a href="../docs/getting_started.html">Getting Started</a></li>
+<li><a href="../docs/structure.html">Project Structure</a></li>
+<li><a href="../docs/references.html">Cross Referencing</a></li>
+<li><a href="../docs/config.html">Configuration</a></li>
+<li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/sources.html">Source Types</a></li>
+<li><a href="../docs/syntax.html">Markdown Syntax</a></li>
 </ol>
 <p style="text-align: center"><strong>Examples</strong></p>
 <ul style="list-style: none; margin: 0 auto; max-width: 350px">
@@ -166,13 +166,16 @@ commonmark parser supports raw HTML tags by default.</p>
 </ul>
 <p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
 <p style="text-align: center"><strong>SOURCE</strong></p>
-<ul style="list-style: none; margin: 0 auto; max-width: 350px">
-<li><a href="../src/Publish.html">Publish.jl</a></li>
-<li><a href="../src/files.html">files.jl</a></li>
-<li><a href="../src/projects.html">projects.jl</a></li>
-<li><a href="../src/targets.html">targets.jl</a></li>
-<li><a href="../src/docstrings.html">docstrings.jl</a></li>
-<li><a href="../src/tools.html">tools.jl</a></li>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="projects.html"><code>projects.jl</code></a></li>
+<li><a href="themes.html"><code>themes.jl</code></a></li>
+<li><a href="load.html"><code>load.jl</code></a></li>
+<li><a href="save.html"><code>save.jl</code></a></li>
+<li><a href="serve.html"><code>serve.jl</code></a></li>
+<li><a href="deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="tools.html"><code>tools.jl</code></a></li>
+<li><a href="utilities.html"><code>utilities.jl</code></a></li>
 </ul>
 <p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
 </nav>

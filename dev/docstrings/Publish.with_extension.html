@@ -25,26 +25,18 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='File'>
-<p><em><code>private</code></em> <strong><code>File</code></strong> — <code>struct</code></p>
+    <main id="page"><article><div class='docs' id='with_extension'>
+<p><code>private</code> <code>with_extension</code> — <code>function</code></p>
 <div class='doc' id='1'>
-<pre><code>File(; kws...)
+<pre><code>with_extension(path, ext)
 </code></pre>
-<p>A <code>File</code> object represents a real, or “virtual”, file within a <a href="Publish.Project.html"><code>Project</code></a>.</p>
-<p>The following are the available keyword’s supported by the <code>File</code> constructor.</p>
-<ul>
-<li><code>name</code>: full path to the <code>File</code>. <code>nothing</code> if it is “virtual”.</li>
-<li><code>mime</code>: the <code>MIME</code> type as defined <a href="../src/files.html#mime-type-defs">above</a>.</li>
-<li><code>text</code>: Raw <code>String</code> content of the <code>File</code>.</li>
-<li><code>dict</code>: <code>Dict{String,Any}</code> data from a parsed <code>.toml</code> file.</li>
-<li><code>node</code>: <code>CommonMark.Node</code> abstract syntax tree from a parsed markdown file.</li>
-</ul>
+<p>Return a path with the extension set to <code>ext</code>.</p>
 </div>
 </div>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.DEFAULT_MODULES.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.Project.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="Publish.watch_files!.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="Publish.with_extension.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
@@ -64,13 +56,16 @@
 </ul>
 <p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
 <p style="text-align: center"><strong>SOURCE</strong></p>
-<ul style="list-style: none; margin: 0 auto; max-width: 350px">
-<li><a href="../src/Publish.html">Publish.jl</a></li>
-<li><a href="../src/files.html">files.jl</a></li>
-<li><a href="../src/projects.html">projects.jl</a></li>
-<li><a href="../src/targets.html">targets.jl</a></li>
-<li><a href="../src/docstrings.html">docstrings.jl</a></li>
-<li><a href="../src/tools.html">tools.jl</a></li>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="projects.html"><code>projects.jl</code></a></li>
+<li><a href="themes.html"><code>themes.jl</code></a></li>
+<li><a href="load.html"><code>load.jl</code></a></li>
+<li><a href="save.html"><code>save.jl</code></a></li>
+<li><a href="serve.html"><code>serve.jl</code></a></li>
+<li><a href="deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="tools.html"><code>tools.jl</code></a></li>
+<li><a href="utilities.html"><code>utilities.jl</code></a></li>
 </ul>
 <p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
 </nav>

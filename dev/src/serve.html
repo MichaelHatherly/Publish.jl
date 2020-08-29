@@ -25,18 +25,77 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='serve'>
-<p><code>public</code> <code>serve</code> — <code>function</code></p>
-<div class='doc' id='1'>
-<p>Start a server to present built output of project <code>src</code> for the given
-<code>targets</code>. The actions performed by each <code>target</code> are defined by the targets
-themselves. The default target used is <a href="Publish.html.html"><code>html</code></a>.</p>
-</div>
-</div>
+    <main id="page"><article><h1 id="serving"><a href="#serving" class="anchor"></a>Serving</h1>
+<pre><code class="language-julia">&quot;&quot;&quot;
+Start a server to present built output of project `src` for the given
+`targets`. The actions performed by each `target` are defined by the targets
+themselves. The default target used is [`html`](#).
+&quot;&quot;&quot;
+function serve(src, targets...=html; port=8000)
+    @info &quot;Serving '$src'...&quot;
+    old = pwd() # Save directory so it can be returned to in cleanup.
+    p = Project(src)
+    dir = mktempdir()
+    sw = LiveServer.SimpleWatcher()
+    watch_files!(sw, p)
+    callback = function (path) # Callback to update project and rerun
+        @info &quot;path: $path&quot;    # given targets.
+        revise(p)
+        update!(p)
+        @sync for f in targets
+            @info &quot;target: $f&quot;
+            @async f(p, dir)
+        end
+        watch_files!(sw, p)
+    end
+    LiveServer.set_callback!(sw, callback)
+    LiveServer.start(sw)
+    try
+        # Run target-specific initialisation code.
+        @sync for f in targets
+            @async init(p, f; port=port, dir=dir)
+        end
+    finally
+        # Cleanup steps.
+        LiveServer.stop(sw)
+        rm(dir; recursive=true, force=true)
+        cd(old) # Reinstate original directory when server is terminated.
+    end
+end
+
+&quot;&quot;&quot;
+Set files to watch for changes within a given [`Project`](#) `p`.
+&quot;&quot;&quot;
+function watch_files!(sw::LiveServer.SimpleWatcher, p::Project)
+    empty!(sw.watchedfiles) # TODO: proper API for this?
+    for file in FileTrees.files(p.tree)
+        f = string(path(file))
+        LiveServer.is_watched(sw, f) || LiveServer.watch_file!(sw, f)
+    end
+end
+
+&quot;&quot;&quot;
+Function for defining the initialisation code called by [`serve`](#)
+for a specific target output.
+
+Should be defined for each valid output target, i.e [`html`](#), [`pdf`](#),
+etc. Signature should follow the following template:
+
+```julia
+function init(project::Project, ::typeof(target); kws...)
+</code></pre>
+<p>…</p>
+<pre><code class="language-julia">end
+```
+
+where `target` is the `Function` defining the output format.
+&quot;&quot;&quot;
+function init end
+</code></pre>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.save.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.setup.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="save.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="deploy.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

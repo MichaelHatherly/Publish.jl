@@ -25,18 +25,24 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='serve'>
-<p><code>public</code> <code>serve</code> — <code>function</code></p>
+    <main id="page"><article><div class='docs' id='init'>
+<p><code>private</code> <code>init</code> — <code>function</code></p>
 <div class='doc' id='1'>
-<p>Start a server to present built output of project <code>src</code> for the given
-<code>targets</code>. The actions performed by each <code>target</code> are defined by the targets
-themselves. The default target used is <a href="Publish.html.html"><code>html</code></a>.</p>
+<p>Function for defining the initialisation code called by <a href="Publish.serve.html"><code>serve</code></a>
+for a specific target output.</p>
+<p>Should be defined for each valid output target, i.e <a href="Publish.html.html"><code>html</code></a>, <a href="Publish.pdf.html"><code>pdf</code></a>,
+etc. Signature should follow the following template:</p>
+<pre><code class="language-julia">function init(project::Project, ::typeof(target); kws...)
+    # ...
+end
+</code></pre>
+<p>where <code>target</code> is the <code>Function</code> defining the output format.</p>
 </div>
 </div>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.save.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.setup.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="Publish.html.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="Publish.init_markdown_parser.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

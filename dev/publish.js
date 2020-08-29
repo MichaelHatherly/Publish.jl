@@ -61,10 +61,10 @@ function triggerEvent(type, obj, data){
 
 window.addEventListener("searchIndexLoaded", function (_) {
     var search = getQueryVariable("search");
-    if (search !== null) {
+    var div = document.getElementById("search-results");
+    if (search !== null && div.innerHTML == "") {
         var search = decodeURIComponent(search);
         var results = window.searchIndex.search(search);
-        var div = document.getElementById("search-results");
         var details = document.createElement("p");
         div.appendChild(details);
         details.innerHTML = "Results: " + results.length;
@@ -84,12 +84,11 @@ document.addEventListener("DOMContentLoaded", function () {
     localStorage.setItem("pageState", "page");
     document.getElementById("toc").style.display = "none";
     // Tabulator init.
-    var table = document.querySelector("#docstring-index");
+    var table = document.getElementById("docstring-index");
     if (table !== null) {
         var table = new Tabulator("#docstring-index", {
             layout: "fitColumns",
             persistentSort:true,
-            // persistentFilter:true, // Not currently supported by the library.
             persistenceMode:"local",
             columns: [
                 {title: "Name", formatter: "html", headerFilter:true},

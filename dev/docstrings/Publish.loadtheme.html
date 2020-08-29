@@ -25,20 +25,23 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='printdoc'>
-<p><em><code>private</code></em> <strong><code>printdoc</code></strong> — <code>function</code></p>
+    <main id="page"><article><div class='docs' id='loadtheme'>
+<p><code>private</code> <code>loadtheme</code> — <code>function</code></p>
 <div class='doc' id='1'>
-<pre><code>printdoc(io, docstr)
+<pre><code>loadtheme(tree, env)
 </code></pre>
-<p>This method prints out the parts of an individual <code>Docs.DocStr</code> object to the
-given <code>IO</code> object <code>io</code>. It is used to get the “formatted” content of the
-docstring without it being pre-parsed by the <code>Markdown</code> standard library.</p>
+<p>Searches the given <code>env</code> configuration for a Publish.jl theme and loads it into
+the provided <code>tree</code>. Since <code>tree</code> is immutable the updated version is returned
+along with a new <code>env</code> containing any merged data from the theme.</p>
+<p><code>loadtheme</code> looks for a <code>publish.theme</code> key in the <code>env</code> and tries to call the
+function defined by the value of the key.</p>
+<p>The themes included with this package are listed in the <a href="Publish.Themes.html"><code>Themes</code></a> module.</p>
 </div>
 </div>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.pdf.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.project_to_module.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="Publish.loadpages.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="Publish.modules.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
@@ -58,13 +61,16 @@ docstring without it being pre-parsed by the <code>Markdown</code> standard libr
 </ul>
 <p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
 <p style="text-align: center"><strong>SOURCE</strong></p>
-<ul style="list-style: none; margin: 0 auto; max-width: 350px">
-<li><a href="../src/Publish.html">Publish.jl</a></li>
-<li><a href="../src/files.html">files.jl</a></li>
-<li><a href="../src/projects.html">projects.jl</a></li>
-<li><a href="../src/targets.html">targets.jl</a></li>
-<li><a href="../src/docstrings.html">docstrings.jl</a></li>
-<li><a href="../src/tools.html">tools.jl</a></li>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="projects.html"><code>projects.jl</code></a></li>
+<li><a href="themes.html"><code>themes.jl</code></a></li>
+<li><a href="load.html"><code>load.jl</code></a></li>
+<li><a href="save.html"><code>save.jl</code></a></li>
+<li><a href="serve.html"><code>serve.jl</code></a></li>
+<li><a href="deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="tools.html"><code>tools.jl</code></a></li>
+<li><a href="utilities.html"><code>utilities.jl</code></a></li>
 </ul>
 <p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
 </nav>

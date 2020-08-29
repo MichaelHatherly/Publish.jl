@@ -25,86 +25,65 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><h1 id="the-publishjl-literate-source-code"><a href="#the-publishjl-literate-source-code" class="anchor"></a>The Publish.jl Literate Source Code</h1>
-<div class="admonition info"><p class="admonition-title">A quick note...</p>
-<p>It’s worth pointing out here that your own package doesn’t need to follow
-this style of writing it in a literate way and probably shouldn’t. This
-has been done for <a href="../docstrings/Publish.Publish.html"><code>Publish</code></a> so as to test out all of it’s available
-functionality.</p>
+    <main id="page"><article><h1 id="publishjl-literate-source-code"><a href="#publishjl-literate-source-code" class="anchor"></a>Publish.jl Literate Source Code</h1>
+<p>This package can use Julia source files as a content source, similar to
+normal markdown files. It uses the same syntax to mark source lines as either
+markdown content or codeblocks. You can read about the details of literate
+Julia files <a href="../docs/sources.html#literate-julia">here</a>.</p>
+<div class="admonition info"><p class="admonition-title">Literate Programming</p>
+<p>These source file only make use of literate features as a test case for
+the package. They should not be thought of as a showcase for literate
+programming itself.</p>
 </div>
-<p>Welcome to the <a href="../docstrings/Publish.Publish.html"><code>Publish</code></a> package source code. Since <a href="../docstrings/Publish.Publish.html"><code>Publish</code></a>
-supports a subset of <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a> syntax the source for this package
-itself makes a good test case for it.</p>
-<p>The content below and on the subsequent pages is all drawn from the source
-code of this package found under the <code>src/</code> directory.</p>
-<p>Displayed code blocks are the source code of this package and any markdown
-content is a comment line starting with <code>#</code>.</p>
-<p>Let’s start off our exploration of the package with the <code>Publish</code> module
-definition as well as a docstring that appears prior to it.</p>
-<pre><code class="language-julia">&quot;&quot;&quot;
-The `Publish` package provides tools for composing [markdown files](#
-&quot;Source Types&quot;), [Jupyter Notebooks](#), and [Literate Julia](#) files into
-[HTML](# &quot;`html`&quot;) and [PDF](# &quot;`pdf`&quot;) documents in a declarative and
-reproducable way.
-
-`Publish` documents are represented by [`Project`](#) objects that store the
-information presented in a `Publish` [configuration](#) file, which also
-happens to be the same `Project.toml` file used by Julia's `Pkg` package
-manager.
-
-To get started using `Publish` by spinning up a web-server for a package
-of your choosing run the following:
-
-```julia-repl
-julia&gt; serve(MyPackage)
-✓ LiveServer listening on http://localhost:8000/ ...
-  (use CTRL+C to shut down)
-```
-
-See the [getting started](#) section of the manual for more details.
-&quot;&quot;&quot;
-module Publish
+<pre><code class="language-julia">module Publish
+</code></pre>
+<h2 id="exports"><a href="#exports" class="anchor"></a>Exports</h2>
+<pre><code class="language-julia">export html, pdf, serve, deploy, setup
 </code></pre>
 <h2 id="imports"><a href="#imports" class="anchor"></a>Imports</h2>
-<p>Below we have all the imported packages that <a href="../docstrings/Publish.Publish.html"><code>Publish</code></a> itself uses.</p>
-<pre><code class="language-julia">import Base.Iterators
-import CommonMark
-import HTTP
+<pre><code class="language-julia">import CommonMark
+import DataStructures
 import IterTools
 import JSON
 import LiveServer
 import Mustache
-import OrderedCollections: OrderedDict
-import Pkg, Pkg.Artifacts, Pkg.TOML
+import Pkg
+import Pkg.TOML
+import Requires
 import Tectonic
+
+using FilePathsBase
+using FileTrees
 </code></pre>
-<h2 id="included-files"><a href="#included-files" class="anchor"></a>Included Files</h2>
-<p>And also the <code>include</code>d files that make up this package.</p>
-<pre><code class="language-julia">include(&quot;files.jl&quot;)
-include(&quot;projects.jl&quot;)
-include(&quot;targets.jl&quot;)
-include(&quot;docstrings.jl&quot;)
+<h2 id="configuration"><a href="#configuration" class="anchor"></a>Configuration</h2>
+<pre><code class="language-julia">const DAGGER = Ref(false)
+const LAZY = Ref(true)
+</code></pre>
+<h2 id="includes"><a href="#includes" class="anchor"></a>Includes</h2>
+<pre><code class="language-julia">include(&quot;projects.jl&quot;)
+include(&quot;themes.jl&quot;)
+include(&quot;load.jl&quot;)
+include(&quot;save.jl&quot;)
+include(&quot;serve.jl&quot;)
+include(&quot;deploy.jl&quot;)
 include(&quot;tools.jl&quot;)
+include(&quot;utilities.jl&quot;)
 </code></pre>
-<h2 id="exports"><a href="#exports" class="anchor"></a>Exports</h2>
-<p>As well as the few functions and types that <a href="../docstrings/Publish.Publish.html"><code>Publish</code></a> exports for public
-use.</p>
-<pre><code class="language-julia">export serve, html, pdf, setup, deploy
-</code></pre>
-<p>This is the end of our <code>src/Publish.jl</code> source file. The rest of the source
-code can be found by browsing further through this document.</p>
-<p>We’ll hide the <code>end</code> keyword on the last line of this file by using the
-<a href="../docs/syntax.html#attributes">Attributes</a> syntax provided by the <a href="https://github.com/MichaelHatherly/CommonMark.jl">CommonMark.jl</a> package. By writing</p>
-<pre><code class="language-plaintext"># {style=&quot;display:none&quot;}
-</code></pre>
-<p>as the last line of a comment block the subsequent code block will not be
-display in the resulting output.</p>
-<pre><code style="display:none" class="language-julia">end # module
+<h2 id="package-initialisation"><a href="#package-initialisation" class="anchor"></a>Package Initialisation</h2>
+<p>Revise.jl is an optional dependency, we use Requires.jl to define a
+<a href="../docstrings/Publish.revise.html"><code>revise</code></a> method when it is available that triggers <code>Revise.revise</code>.</p>
+<pre><code class="language-julia">function __init__()
+    Requires.@require Revise=&quot;295af30f-e4ad-537b-8983-00126c2a3abe&quot; begin
+        revise(::Project) = Revise.revise()
+    end
+end
+
+end # module
 </code></pre>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="..&#x2F;examples&#x2F;basics.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="files.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="..&#x2F;docstrings.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="projects.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
@@ -124,13 +103,16 @@ display in the resulting output.</p>
 </ul>
 <p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
 <p style="text-align: center"><strong>SOURCE</strong></p>
-<ul style="list-style: none; margin: 0 auto; max-width: 350px">
-<li><a href="Publish.html">Publish.jl</a></li>
-<li><a href="files.html">files.jl</a></li>
-<li><a href="projects.html">projects.jl</a></li>
-<li><a href="targets.html">targets.jl</a></li>
-<li><a href="docstrings.html">docstrings.jl</a></li>
-<li><a href="tools.html">tools.jl</a></li>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="projects.html"><code>projects.jl</code></a></li>
+<li><a href="themes.html"><code>themes.jl</code></a></li>
+<li><a href="load.html"><code>load.jl</code></a></li>
+<li><a href="save.html"><code>save.jl</code></a></li>
+<li><a href="serve.html"><code>serve.jl</code></a></li>
+<li><a href="deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="tools.html"><code>tools.jl</code></a></li>
+<li><a href="utilities.html"><code>utilities.jl</code></a></li>
 </ul>
 <p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
 </nav>
