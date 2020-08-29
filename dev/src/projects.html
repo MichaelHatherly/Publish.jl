@@ -66,6 +66,7 @@ function Project(path::AbstractPath; loaded=Dict{AbstractPath,Project}(), global
     if haskey(loaded, path)
         return loaded[path]
     elseif isfile(path)
+        path = abspath(path)
         cd(dirname(path)) do
             path = canonicalize(path)
             env = loadtoml(path, globals)
@@ -120,7 +121,25 @@ function findmodule(id::Base.PkgId)
     return Base.loaded_modules[id]
 end
 findmodule(name::AbstractString, uuid::AbstractString) = findmodule(Base.PkgId(Base.UUID(uuid), name))
-findmodule(env::AbstractDict) = findmodule(env[&quot;name&quot;], env[&quot;uuid&quot;])
+findmodule(env::AbstractDict) = findmodule(env[&quot;name&quot;], get(env, &quot;uuid&quot;, nothing))
+findmodule(name::AbstractString, ::Nothing) = nothing
+
+function findmodules(env::AbstractDict)
+    roots = env[&quot;publish&quot;][&quot;modules&quot;]
+    mods = Set{Module}()
+    if isempty(roots)
+        mod = findmodule(env)
+        mod isa Module &amp;&amp; push!(mods, mod)
+    else
+        for root in roots
+            bind = binding(root)
+            if Docs.defined(bind)
+                push!(mods, Docs.resolve(bind))
+            end
+        end
+    end
+    return mods
+end
 
 &quot;&quot;&quot;
     update!(project)
@@ -162,6 +181,7 @@ end
 <li><a href="../docs/references.html">Cross Referencing</a></li>
 <li><a href="../docs/config.html">Configuration</a></li>
 <li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
 <li><a href="../docs/sources.html">Source Types</a></li>
 <li><a href="../docs/syntax.html">Markdown Syntax</a></li>
 </ol>

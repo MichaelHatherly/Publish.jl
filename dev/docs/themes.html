@@ -25,45 +25,37 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><h1 id="source-types"><a href="#source-types" class="anchor"></a>Source Types</h1>
-<p>Up until now we’ve been using markdown files for our source content — those
-ending with <code>.md</code>. <code>Publish</code> also allows using several other file types to be
-used in place of markdown files, so long as the text is formatted as markdown.</p>
-<h2 id="jupyter-notebooks"><a href="#jupyter-notebooks" class="anchor"></a>Jupyter Notebooks</h2>
-<p>Notebook files, those ending with <code>.ipynb</code>, can be imported in the same way as
-<code>.md</code> files in your <code>toc.md</code> or <code>pages = </code> configuration. They will behave in
-the exact same way.</p>
-<p>Saving your notebooks within a normal Jupyter session will be reflected in your
-<code>Publish</code> server just like it is when saving normal markdown files.</p>
-<div class="admonition info"><p class="admonition-title">Info</p>
-<p>All source code cells are treated a <code>julia</code> code blocks in the resulting
-<code>Publish</code> output.</p>
-</div>
-<h2 id="literate-julia"><a href="#literate-julia" class="anchor"></a>Literate Julia</h2>
-<p>Julia source code can also be read by <code>Publish</code>. The syntax used is a stripped
-down version of that available in <a href="https://fredrikekre.github.io/Literate.jl/.html">Literate.jl</a>. All the source code for this
-package is available for browsing within this document, via the <em>Source Code</em>
-section in the navigation menu. To summarise,</p>
-<ul>
-<li>lines starting with a single <code>#</code>, with any amount of leading whitespace is
-treated as a line of markdown content,</li>
-<li>lines with a double <code>##</code> are treated as a normal comment and the output
-will have one <code>#</code> stripped from it,</li>
-<li>other lines are treated as source code and not modified,</li>
-<li>none of the code blocks are executed,</li>
-<li><code>Publish</code> does not currently support Literate.jl’s filters such as <code>#md</code>,
-<code>#jl</code>, <code>#nb</code>, <code>#-</code>, or <code>#+</code>,</li>
-<li><code>#src</code> unconditional filtering is supported. Any line containing <code>#src</code>
-will be stripped from the output.</li>
-</ul>
+    <main id="page"><article><h1 id="custom-themes"><a href="#custom-themes" class="anchor"></a>Custom Themes</h1>
+<p>Aside from altering the templates and providing your own custom CSS and JS
+files you may also create a fully customised theme that does not use any of the
+default assets shipped with Publish.</p>
+<p>To write your own theme create a folder with the name of your theme and add a
+<code>Theme.toml</code> file to it.</p>
 <div class="admonition tip"><p class="admonition-title">Tip</p>
-<p><code>Publish</code> should play nicely with <a href="https://timholy.github.io/Revise.jl/stable/.html">Revise.jl</a> and simply importing
-<code>Revise</code> prior to <code>Publish</code> and your own package will be enough to allow
-for Revise-style development when using <code>Publish</code>.</p>
-</div></article>
+<p>Add an underscore at the start of your folder name so that Publish won’t
+load it’s content automatically. We’ll be adding the path manually to your
+<code>[publish]</code> section of the project’s configuration file.</p>
+</div>
+<p>Add the supporting assets, such as CSS, JS, and Mustache templates to the theme
+folder and then reference them in your <code>_my_theme_folder/Theme.toml</code> file like so</p>
+<pre><code class="language-toml">theme = &quot;theme_name&quot;
+
+[html]
+default_css = [&quot;custom.css&quot;]
+default_js = [&quot;custom.js&quot;]
+template = {file = &quot;custom_html.mustache&quot;}
+
+[latex]
+template = {file = &quot;custom_latex.mustache&quot;}
+</code></pre>
+<p>and then in your project’s <code>Project.toml</code> file add a reference to this folder</p>
+<pre><code class="language-toml">[publish]
+theme = &quot;_my_theme_folder&quot;
+</code></pre>
+</article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="themes.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="syntax.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="templates.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="sources.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

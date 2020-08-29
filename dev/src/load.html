@@ -31,7 +31,7 @@
         &quot;deps&quot; =&gt; Dict{String,String}(),
         &quot;publish&quot; =&gt; Dict(
             &quot;ignore&quot; =&gt; [],
-            &quot;theme&quot; =&gt; string(Themes.default),
+            &quot;theme&quot; =&gt; &quot;Publish.Themes.default&quot;,
             &quot;config&quot; =&gt; &quot;Project.toml&quot;,
             &quot;pages&quot; =&gt; [&quot;README.md&quot;],
             &quot;toc&quot; =&gt; &quot;toc.md&quot;,
@@ -151,10 +151,10 @@ project. Merges these files into the given `tree` as well as appending them to
 &quot;&quot;&quot;
 function loaddocs(tree::FileTree, env::AbstractDict, pages::Vector)
     docs_dir, docs_index = &quot;docstrings&quot;, &quot;docstrings.md&quot;
-    root = findmodule(env)
+    roots = findmodules(env)
     docs = DataStructures.SortedDict{String,Tuple{Module,Docs.Binding,Docs.MultiDoc}}()
     for mod in visible_modules(env)
-        if root === Base.moduleroot(mod)
+        if Base.moduleroot(mod) in roots
             for (k, v) in Docs.meta(mod)
                 docs[&quot;$k.md&quot;] = (mod, k, v)
             end
@@ -232,6 +232,7 @@ end
 <li><a href="../docs/references.html">Cross Referencing</a></li>
 <li><a href="../docs/config.html">Configuration</a></li>
 <li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
 <li><a href="../docs/sources.html">Source Types</a></li>
 <li><a href="../docs/syntax.html">Markdown Syntax</a></li>
 </ol>

@@ -41,7 +41,7 @@ module Themes
 &quot;&quot;&quot;
 The &quot;default&quot; theme used by this package.
 &quot;&quot;&quot;
-default() = abspath(joinpath(@__DIR__, &quot;..&quot;, &quot;_themes&quot;, &quot;default&quot;))
+const default = abspath(joinpath(@__DIR__, &quot;..&quot;, &quot;_themes&quot;, &quot;default&quot;))
 
 end
 </code></pre>
@@ -59,13 +59,17 @@ function defined by the value of the key.
 The themes included with this package are listed in the [`Themes`](#) module.
 &quot;&quot;&quot;
 function loadtheme(tree::FileTree, env::AbstractDict)
-    name = binding(env[&quot;publish&quot;][&quot;theme&quot;])
-    root = (Docs.defined(name) ? Docs.resolve(name) : Themes.default)()
-    toml = joinpath(root, &quot;Theme.toml&quot;)
-    isfile(toml) || error(&quot;'$toml' theme does not exist.&quot;)
-    dict = TOML.parsefile(toml)
+    theme = env[&quot;publish&quot;][&quot;theme&quot;]
+    file = joinpath(path(tree), theme, &quot;Theme.toml&quot;)
+    if !isfile(file)
+        bind = binding(theme)
+        dir = joinpath(Docs.defined(bind) ? Docs.resolve(bind) : Themes.default)
+        file = joinpath(dir, &quot;Theme.toml&quot;)
+        isfile(file) || error(&quot;'$theme' theme does not exist.&quot;)
+    end
+    dict = TOML.parsefile(string(file))
     env = rmerge(env, Dict(&quot;publish&quot; =&gt; dict))
-    tree′ = FileTree(root)
+    tree′ = FileTree(dirname(file))
     tree′ = FileTrees.load(tree′; lazy=LAZY[]) do file
         loadfile(env, joinpath(basename(tree′), path(file)))
     end
@@ -86,6 +90,7 @@ end
 <li><a href="../docs/references.html">Cross Referencing</a></li>
 <li><a href="../docs/config.html">Configuration</a></li>
 <li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
 <li><a href="../docs/sources.html">Source Types</a></li>
 <li><a href="../docs/syntax.html">Markdown Syntax</a></li>
 </ol>
