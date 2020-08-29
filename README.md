@@ -28,7 +28,7 @@ Some standout features:
   - produces HTML and PDF files natively, no LaTeX dependencies to manage yourself,
   - publication-quality PDF generation uses [tectonic][] for self-contained, reproducible builds,
   - combine markdown files, [Jupyter][] notebooks, and Julia files for your content,
-  - supports [themes](#) to customise both HTML and PDF output,
+  - supports [themes](# "Custom Themes") to customise both HTML and PDF output,
   - and declarative configuration built on top of Julia's [Pkg.jl][] package manager.
 
 `Publish` can scale from single pages all the way to large cross-referenced
