@@ -23,6 +23,7 @@ using Test, Publish
         end
     end
     @testset "Integration" begin
+        version = Publish.Project(Publish).env["version"]
         @test html(Publish) == Publish
         @test pdf(Publish) == Publish
         mktempdir() do dir
@@ -33,11 +34,11 @@ using Test, Publish
                 @test isfile(joinpath("project", "README.md"))
 
                 @test deploy(Publish, "deploy") == Publish
-                @test isfile(joinpath("deploy", "0.1.0", "index.html"))
+                @test isfile(joinpath("deploy", version, "index.html"))
                 rm("deploy"; recursive=true)
 
                 @test deploy(Publish, "deploy"; named=true) == Publish
-                @test isfile(joinpath("deploy", "Publish", "0.1.0", "index.html"))
+                @test isfile(joinpath("deploy", "Publish", version, "index.html"))
                 rm("deploy"; recursive=true)
 
                 @test deploy(Publish, "deploy"; versioned=false) == Publish
@@ -49,12 +50,12 @@ using Test, Publish
                 rm("deploy"; recursive=true)
 
                 @test deploy(Publish, "deploy", pdf) == Publish
-                @test isfile(joinpath("deploy", "0.1.0", "Publish.pdf"))
+                @test isfile(joinpath("deploy", version, "Publish.pdf"))
                 rm("deploy"; recursive=true)
 
                 @test deploy(Publish, "deploy", pdf, html) == Publish
-                @test isfile(joinpath("deploy", "0.1.0", "Publish.pdf"))
-                @test isfile(joinpath("deploy", "0.1.0", "index.html"))
+                @test isfile(joinpath("deploy", version, "Publish.pdf"))
+                @test isfile(joinpath("deploy", version, "index.html"))
                 rm("deploy"; recursive=true)
             end
         end
