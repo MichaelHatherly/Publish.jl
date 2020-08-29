@@ -9,6 +9,7 @@ function loadtoml(path::AbstractPath, globals)
             "config" => "Project.toml",
             "pages" => ["README.md"],
             "toc" => "toc.md",
+            "modules" => [],
         ),
     )
     return rmerge(defaults, open(TOML.parse, path), globals)

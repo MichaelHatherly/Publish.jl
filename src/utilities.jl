@@ -37,8 +37,22 @@ load_markdown(io::IO, parser=init_markdown_parser()) = parser(seekstart(io))
 load_markdown(str::AbstractString, parser=init_markdown_parser()) = load_markdown(IOBuffer(str), parser)
 
 function visible_modules(env::AbstractDict)
-    mod = findmodule(env)
-    return mod === nothing ? Set{Module}() : modules(mod)
+    roots = env["publish"]["modules"]
+    if isempty(roots)
+        mod = findmodule(env)
+        return mod === nothing ? Set{Module}() : modules(mod)
+    else
+        set = Set{Module}()
+        for root in roots
+            bind = binding(root)
+            if Docs.defined(bind)
+                modules(Docs.resolve(bind), set)
+            else
+                @warn "module '$root' listed in 'publish.modules' does not exist."
+            end
+        end
+        return set
+    end
 end
 
 """
