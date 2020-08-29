@@ -1,0 +1,9 @@
+theme = "test"
+
+[html]
+default_css = ["test.css"]
+default_js = ["test.js"]
+template = {file = "html.mustache"}
+
+[latex]
+template = {file = "latex.mustache"}

@@ -61,6 +61,6 @@ function setup(dir; pkg=true)
         end
         ## Display a message for users to help them start a server.
         path = joinpath(pwd(), proj)
-        @info "run `serve(Project($(repr(path))))` to start a server."
+        @info "run `serve($(repr(path)))` to start a server."
     end
 end

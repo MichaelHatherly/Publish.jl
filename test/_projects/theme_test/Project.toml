@@ -1,0 +1,7 @@
+name = "theme_test"
+
+[deps]
+Publish = "f065f642-d108-4f50-8aa5-6749150a895a"
+
+[publish]
+theme = "test_theme"

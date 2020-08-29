@@ -126,10 +126,10 @@ project. Merges these files into the given `tree` as well as appending them to
 """
 function loaddocs(tree::FileTree, env::AbstractDict, pages::Vector)
     docs_dir, docs_index = "docstrings", "docstrings.md"
-    root = findmodule(env)
+    roots = findmodules(env)
     docs = DataStructures.SortedDict{String,Tuple{Module,Docs.Binding,Docs.MultiDoc}}()
     for mod in visible_modules(env)
-        if root === Base.moduleroot(mod)
+        if Base.moduleroot(mod) in roots
             for (k, v) in Docs.meta(mod)
                 docs["$k.md"] = (mod, k, v)
             end

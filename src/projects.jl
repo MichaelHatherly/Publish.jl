@@ -41,6 +41,7 @@ function Project(path::AbstractPath; loaded=Dict{AbstractPath,Project}(), global
     if haskey(loaded, path)
         return loaded[path]
     elseif isfile(path)
+        path = abspath(path)
         cd(dirname(path)) do
             path = canonicalize(path)
             env = loadtoml(path, globals)
@@ -96,7 +97,25 @@ function findmodule(id::Base.PkgId)
     return Base.loaded_modules[id]
 end
 findmodule(name::AbstractString, uuid::AbstractString) = findmodule(Base.PkgId(Base.UUID(uuid), name))
-findmodule(env::AbstractDict) = findmodule(env["name"], env["uuid"])
+findmodule(env::AbstractDict) = findmodule(env["name"], get(env, "uuid", nothing))
+findmodule(name::AbstractString, ::Nothing) = nothing
+
+function findmodules(env::AbstractDict)
+    roots = env["publish"]["modules"]
+    mods = Set{Module}()
+    if isempty(roots)
+        mod = findmodule(env)
+        mod isa Module && push!(mods, mod)
+    else
+        for root in roots
+            bind = binding(root)
+            if Docs.defined(bind)
+                push!(mods, Docs.resolve(bind))
+            end
+        end
+    end
+    return mods
+end
 
 """
     update!(project)
