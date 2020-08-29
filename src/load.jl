@@ -136,7 +136,6 @@ function loaddocs(tree::FileTree, env::AbstractDict, pages::Vector)
         end
     end
     isempty(docs) && return tree, pages # Bail early if no docstrings are found.
-    push!(pages, Path(docs_index))
     append!(pages, sort!([joinpath(Path(docs_dir), k) for k in keys(docs)]; by=string))
     dtree = maketree(basename(tree) => [docs_index, docs_dir => keys(docs)])
     dtree = FileTrees.load(dtree; lazy=LAZY[]) do file

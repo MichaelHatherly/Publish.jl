@@ -87,7 +87,10 @@ _html(::Project, ::Any, ::AbstractPath, ::Dict) = nothing
 
 function toc_link(node, project, pub, path)
     obj = deepcopy(node.t)
-    obj.destination = relpath(obj.destination, dirname(joinpath(".", string(path))))
+    ## Change to toc location based on the current path.
+    reltoc = relpath(pub["toc"], dirname(joinpath(".", string(path))))
+    ## Adjust the toc link's path based on the new toc root.
+    obj.destination = joinpath(dirname(reltoc), obj.destination)
     return html_link(obj, node, project, pub, path)
 end
 
@@ -137,7 +140,7 @@ function html_link(obj, node, project, pub, path)
         end
     elseif startswith(obj.destination, "#")
         ## Skip these kind of links, they're just page-local.
-    elseif haskey(pub["mapping"], Path(path))
+    elseif haskey(pub, "mapping") && haskey(pub["mapping"], Path(path))
         ## If it's in the project's page mapping then we change the extension.
         obj.destination = with_extension(obj.destination, "html")
     end
