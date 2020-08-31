@@ -12,6 +12,7 @@ HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Mustache = "ffc61752-8dc7-55ee-8c37-f3e9cdd09e70"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
@@ -36,8 +37,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [publish]
 keywords = ["documentation"]
-title = "Publish.jl"
 ignore = ["^(gh-pages|juliamnt|julia.dmg)$"]
+title = "Publish.jl"
 
 [targets]
 test = ["Test"]

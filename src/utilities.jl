@@ -19,6 +19,7 @@ Returns a new `CommonMark.Parser` object with all extensions enabled.
 function init_markdown_parser()
     cm = CommonMark
     return cm.enable!(cm.Parser(), [
+        ## CommonMark-provided.
         cm.AdmonitionRule(),
         cm.AttributeRule(),
         cm.AutoIdentifierRule(),
@@ -30,6 +31,8 @@ function init_markdown_parser()
         cm.RawContentRule(),
         cm.TableRule(),
         cm.TypographyRule(),
+        ## Publish-provided.
+        CellRule(), # TODO: insert cache here maybe.
     ])
 end
 
@@ -161,7 +164,10 @@ end
 
 Return a path with the extension set to `ext`.
 """
-with_extension(p::Union{AbstractPath,AbstractString}, ext) = "$(first(splitext(p))).$ext"
+function with_extension end
+
+with_extension(p::AbstractString, ext) = "$(first(splitext(p))).$ext"
+with_extension(p::AbstractPath, ext) = with_extension(string(p), ext)
 
 """
     relative_paths(func, project, file)

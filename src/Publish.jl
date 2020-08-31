@@ -31,6 +31,7 @@ import Tectonic
 
 using FilePathsBase
 using FileTrees
+using Logging
 
 # ## Configuration
 
@@ -42,6 +43,7 @@ const LAZY = Ref(true)
 include("projects.jl")
 include("themes.jl")
 include("load.jl")
+include("cells.jl")
 include("save.jl")
 include("serve.jl")
 include("deploy.jl")
