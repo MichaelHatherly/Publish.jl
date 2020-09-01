@@ -1,6 +1,11 @@
 using Test, Publish
 
 @testset "Publish" begin
+    @testset "MIME type display" begin
+        path = joinpath(@__DIR__, "_projects/mime_tests/Project.toml")
+        @test html(path) == path
+        @test pdf(path) == path
+    end
     @testset "Custom Themes" begin
         path = joinpath(@__DIR__, "_projects/theme_test/Project.toml")
         @test html(path) == path

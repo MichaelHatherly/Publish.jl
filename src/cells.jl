@@ -56,7 +56,7 @@ Given a `cell` this function evaluates it and prints the output to `writer`
 using the first available `MIME` from `mimes`. Uses the `default` printer
 function to print any code blocks that are required in the output.
 """
-function display_as(default, cell, w, mimes...)
+function display_as(default, cell, w, mimes)
     ## Display options for cell:
     show_output = get(cell.node.meta, "output", "true")
     show_result = get(cell.node.meta, "result", "true")
@@ -80,7 +80,7 @@ function display_as(default, cell, w, mimes...)
     for mime in mimes
         if showable(mime, result)
             ## We've found a suitable mimetype, display as that.
-            limitedshow(w.buffer, mime, result)
+            limitedshow(w.buffer, default, mime, result)
             return nothing
         end
     end
@@ -88,7 +88,7 @@ function display_as(default, cell, w, mimes...)
     code = CommonMark.Node(CommonMark.CodeBlock())
     code.t.info = "plaintext"
     code.meta["class"] = ["plaintext", "cell-output", "cell-result"]
-    code.literal = limitedshow(MIME("text/plain"), result)
+    code.literal = limitedshow(default, MIME("text/plain"), result)
     default(code.t, w, code, true)
     return nothing
 end
@@ -102,8 +102,52 @@ given.
 """
 function limitedshow end
 
-limitedshow(io::IO, m, r) = Base.invokelatest(show, IOContext(io, :limit=>true), m, r)
-limitedshow(m, r) = sprint(limitedshow, m, r)
+limitedshow(io::IO, default, m, r) = Base.invokelatest(show, IOContext(io, :limit=>true), m, r)
+limitedshow(default, m, r) = sprint(limitedshow, default, m, r)
+
+# ## Supported image MIMES.
+
+const SUPPORTED_MIMES = Dict{Symbol,Vector{MIME}}(
+    :html  => map(MIME, [
+        "image/svg+xml", # TODO: optimal ordering.
+        "image/png",
+        "image/jpeg",
+        "image/gif",
+        "text/html",
+    ]),
+    :latex => map(MIME, [
+        "text/tikz", # TODO: optimal ordering.
+        "image/png",
+        "application/pdf",
+        "text/latex",
+    ]),
+    :term  => MIME[],
+)
+
+const IMAGE_MIMES = Union{
+    MIME"application/pdf",
+    MIME"image/gif",
+    MIME"image/jpeg",
+    MIME"image/png",
+    MIME"image/svg+xml",
+    MIME"text/tikz",
+}
+
+function limitedshow(io::IO, fn, mime::IMAGE_MIMES, result)
+    ext(::MIME"application/pdf") = ".pdf"
+    ext(::MIME"image/gif") = ".gif"
+    ext(::MIME"image/jpeg") = ".jpeg"
+    ext(::MIME"image/png") = ".png"
+    ext(::MIME"image/svg+xml") = ".svg"
+    ext(::MIME"text/tikz") = ".tikz"
+    name = string(hash(result), ext(mime))
+    open(name, "w") do handle
+        Base.invokelatest(show, handle, mime, result)
+    end
+    node = CommonMark.Node(CommonMark.Image())
+    node.t.destination = name
+    return cm_wrapper(fn)(io, node)
+end
 
 # ## Capturing Cell Output
 #
@@ -154,14 +198,16 @@ end
 # These definitions are needed by CommonMark to hook into it's display system.
 
 function CommonMark.write_html(cell::Cell, w, n, ent)
-    ent && display_as(CommonMark.write_html, cell, w, MIME("text/html"))
+    ent && display_as(CommonMark.write_html, cell, w, SUPPORTED_MIMES[:html])
     return nothing
 end
+cm_wrapper(::typeof(CommonMark.write_html)) = CommonMark.html # The wrapper function for write_html
 
 function CommonMark.write_latex(cell::Cell, w, n, ent)
-    ent && display_as(CommonMark.write_latex, cell, w, MIME("text/latex"))
+    ent && display_as(CommonMark.write_latex, cell, w, SUPPORTED_MIMES[:latex])
     return nothing
 end
+cm_wrapper(::typeof(CommonMark.write_latex)) = CommonMark.latex # The wrapper function for write_latex
 
 # The following two definitions aren't really needed since Publish doesn't support
 # output to terminal or markdown, but are defined to ensure the display system is
@@ -169,7 +215,7 @@ end
 
 function CommonMark.write_term(cell::Cell, w, n, ent)
     if ent
-        display_as(CommonMark.write_term, cell, w)
+        display_as(CommonMark.write_term, cell, w, SUPPORTED_MIMES[:term])
         ## Make sure to add a linebreak afterwards if needed.
         if !CommonMark.isnull(n.nxt)
             CommonMark.print_margin(w)

@@ -62,10 +62,13 @@ function _html(p::Project, node::CommonMark.Node, path::AbstractPath, mapping::D
         relative_paths(p, path) do pub
             pub["html"]["prev"] = with_extension(pub["html"]["prev"], "html")
             pub["html"]["next"] = with_extension(pub["html"]["next"], "html")
-            open(dst, "w") do io
-                pub["template-engine"] = Mustache.render
-                pub["smartlink-engine"] = (_,_,n,_)->html_link(n, p, pub, path)
-                CommonMark.html(io, node, pub)
+            dir, name = splitdir(dst)
+            cd(isempty(dir) ? "." : dir) do
+                open(name, "w") do io
+                    pub["template-engine"] = Mustache.render
+                    pub["smartlink-engine"] = (_,_,n,_)->html_link(n, p, pub, path)
+                    CommonMark.html(io, node, pub)
+                end
             end
         end
         write("search.json", JSON.json(json_search_data(p)))
@@ -248,8 +251,12 @@ _pdf(p::Project, t::FileTree, f::File) = _pdf(p, exec(f[]), relative(path(f), ba
 function _pdf(p::Project, node::CommonMark.Node, path::AbstractPath)
     pub = p.env["publish"]
     pub["smartlink-engine"] = (_, _, n, _) -> tex_link(n)
-    open(with_extension(path, "tex"), "w") do io
-        CommonMark.latex(io, node, pub)
+    dst = with_extension(path, "tex")
+    dir, name = splitdir(dst)
+    cd(isempty(dir) ? "." : dir) do
+        open(name, "w") do io
+            CommonMark.latex(io, node, pub)
+        end
     end
 end
 _pdf(::Project, data::Vector{UInt8}, path::AbstractPath) = write(path, data)
