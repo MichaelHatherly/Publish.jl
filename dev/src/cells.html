@@ -79,7 +79,7 @@ Given a `cell` this function evaluates it and prints the output to `writer`
 using the first available `MIME` from `mimes`. Uses the `default` printer
 function to print any code blocks that are required in the output.
 &quot;&quot;&quot;
-function display_as(default, cell, w, mimes...)
+function display_as(default, cell, w, mimes)
     # Display options for cell:
     show_output = get(cell.node.meta, &quot;output&quot;, &quot;true&quot;)
     show_result = get(cell.node.meta, &quot;result&quot;, &quot;true&quot;)
@@ -103,7 +103,7 @@ function display_as(default, cell, w, mimes...)
     for mime in mimes
         if showable(mime, result)
             # We've found a suitable mimetype, display as that.
-            limitedshow(w.buffer, mime, result)
+            limitedshow(w.buffer, default, mime, result)
             return nothing
         end
     end
@@ -111,7 +111,7 @@ function display_as(default, cell, w, mimes...)
     code = CommonMark.Node(CommonMark.CodeBlock())
     code.t.info = &quot;plaintext&quot;
     code.meta[&quot;class&quot;] = [&quot;plaintext&quot;, &quot;cell-output&quot;, &quot;cell-result&quot;]
-    code.literal = limitedshow(MIME(&quot;text/plain&quot;), result)
+    code.literal = limitedshow(default, MIME(&quot;text/plain&quot;), result)
     default(code.t, w, code, true)
     return nothing
 end
@@ -125,8 +125,51 @@ given.
 &quot;&quot;&quot;
 function limitedshow end
 
-limitedshow(io::IO, m, r) = Base.invokelatest(show, IOContext(io, :limit=&gt;true), m, r)
-limitedshow(m, r) = sprint(limitedshow, m, r)
+limitedshow(io::IO, default, m, r) = Base.invokelatest(show, IOContext(io, :limit=&gt;true), m, r)
+limitedshow(default, m, r) = sprint(limitedshow, default, m, r)
+</code></pre>
+<h2 id="supported-image-mimes"><a href="#supported-image-mimes" class="anchor"></a>Supported image MIMES.</h2>
+<pre><code class="language-julia">const SUPPORTED_MIMES = Dict{Symbol,Vector{MIME}}(
+    :html  =&gt; map(MIME, [
+        &quot;image/svg+xml&quot;, # TODO: optimal ordering.
+        &quot;image/png&quot;,
+        &quot;image/jpeg&quot;,
+        &quot;image/gif&quot;,
+        &quot;text/html&quot;,
+    ]),
+    :latex =&gt; map(MIME, [
+        &quot;text/tikz&quot;, # TODO: optimal ordering.
+        &quot;image/png&quot;,
+        &quot;application/pdf&quot;,
+        &quot;text/latex&quot;,
+    ]),
+    :term  =&gt; MIME[],
+)
+
+const IMAGE_MIMES = Union{
+    MIME&quot;application/pdf&quot;,
+    MIME&quot;image/gif&quot;,
+    MIME&quot;image/jpeg&quot;,
+    MIME&quot;image/png&quot;,
+    MIME&quot;image/svg+xml&quot;,
+    MIME&quot;text/tikz&quot;,
+}
+
+function limitedshow(io::IO, fn, mime::IMAGE_MIMES, result)
+    ext(::MIME&quot;application/pdf&quot;) = &quot;.pdf&quot;
+    ext(::MIME&quot;image/gif&quot;) = &quot;.gif&quot;
+    ext(::MIME&quot;image/jpeg&quot;) = &quot;.jpeg&quot;
+    ext(::MIME&quot;image/png&quot;) = &quot;.png&quot;
+    ext(::MIME&quot;image/svg+xml&quot;) = &quot;.svg&quot;
+    ext(::MIME&quot;text/tikz&quot;) = &quot;.tikz&quot;
+    name = string(hash(result), ext(mime))
+    open(name, &quot;w&quot;) do handle
+        Base.invokelatest(show, handle, mime, result)
+    end
+    node = CommonMark.Node(CommonMark.Image())
+    node.t.destination = name
+    return cm_wrapper(fn)(io, node)
+end
 </code></pre>
 <h2 id="capturing-cell-output"><a href="#capturing-cell-output" class="anchor"></a>Capturing Cell Output</h2>
 <p>The following function is taken from Documenter’s source, MIT licensed.</p>
@@ -174,21 +217,23 @@ end
 <h2 id="commonmark-writers"><a href="#commonmark-writers" class="anchor"></a>CommonMark Writers</h2>
 <p>These definitions are needed by CommonMark to hook into it’s display system.</p>
 <pre><code class="language-julia">function CommonMark.write_html(cell::Cell, w, n, ent)
-    ent &amp;&amp; display_as(CommonMark.write_html, cell, w, MIME(&quot;text/html&quot;))
+    ent &amp;&amp; display_as(CommonMark.write_html, cell, w, SUPPORTED_MIMES[:html])
     return nothing
 end
+cm_wrapper(::typeof(CommonMark.write_html)) = CommonMark.html # The wrapper function for write_html
 
 function CommonMark.write_latex(cell::Cell, w, n, ent)
-    ent &amp;&amp; display_as(CommonMark.write_latex, cell, w, MIME(&quot;text/latex&quot;))
+    ent &amp;&amp; display_as(CommonMark.write_latex, cell, w, SUPPORTED_MIMES[:latex])
     return nothing
 end
+cm_wrapper(::typeof(CommonMark.write_latex)) = CommonMark.latex # The wrapper function for write_latex
 </code></pre>
 <p>The following two definitions aren’t really needed since Publish doesn’t support
 output to terminal or markdown, but are defined to ensure the display system is
 complete for the <a href="../docstrings/Publish.Cell.html"><code>Cell</code></a> node type.</p>
 <pre><code class="language-julia">function CommonMark.write_term(cell::Cell, w, n, ent)
     if ent
-        display_as(CommonMark.write_term, cell, w)
+        display_as(CommonMark.write_term, cell, w, SUPPORTED_MIMES[:term])
         # Make sure to add a linebreak afterwards if needed.
         if !CommonMark.isnull(n.nxt)
             CommonMark.print_margin(w)
