@@ -18,7 +18,7 @@
 [documenter.jl]: https://juliadocs.github.io/Documenter.jl/stable/
 
 This is a package for [Julia][] that provides a general framework for writing
-prose --- technical documentation is it's focus, though it is general enough to
+prose --- technical documentation is its focus, though it is general enough to
 be applied to any kind of written document.
 
 Some standout features:
