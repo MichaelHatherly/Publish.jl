@@ -5,10 +5,10 @@ Start a server to present built output of project `src` for the given
 `targets`. The actions performed by each `target` are defined by the targets
 themselves. The default target used is [`html`](#).
 """
-function serve(src, targets...=html; port=8000)
+function serve(src, targets...=html; port=8000, keywords...)
     @info "Serving '$src'..."
     old = pwd() # Save directory so it can be returned to in cleanup.
-    p = Project(src)
+    p = Project(src; keywords...)
     dir = mktempdir()
     sw = LiveServer.SimpleWatcher()
     watch_files!(sw, p)

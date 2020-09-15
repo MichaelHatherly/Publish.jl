@@ -1,6 +1,17 @@
 using Test, Publish
 
+module CellImportedModule
+using DataFrames
+export imported_dataframe
+const imported_dataframe = DataFrame(a=1:4, b=2:5)
+end
+
 @testset "Publish" begin
+    @testset "Cells" begin
+        path = joinpath(@__DIR__, "_projects/cell_tests/Project.toml")
+        @test html(path; globals=Dict("publish" => Dict("cell-imports" => [CellImportedModule]))) == path
+        @test pdf(path; globals=Dict("publish" => Dict("cell-imports" => [CellImportedModule]))) == path
+    end
     @testset "MIME type display" begin
         path = joinpath(@__DIR__, "_projects/mime_tests/Project.toml")
         @test html(path) == path

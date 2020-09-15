@@ -23,8 +23,8 @@ end
 """
 Convert the given `src` project to a collection of HTML files.
 """
-function html(src, dst=nothing)
-    p = Project(src)
+function html(src, dst=nothing; keywords...)
+    p = Project(src; keywords...)
     p === nothing && return src
     h = p.env["publish"]["html"]
     h["template"]["string"] = String(exec(p.tree[h["template"]["file"]][]))
@@ -41,7 +41,7 @@ function html(src, dst=nothing)
 end
 
 function init(p::Project, ::typeof(html); port=nothing, dir=nothing, kws...)
-    html(p, dir)
+    html(p, dir; kws...)
     LiveServer.serve(; port=port, dir=dir)
 end
 
@@ -208,8 +208,8 @@ end
 """
 Convert the given `src` project to a PDF file.
 """
-function pdf(src, dst=nothing)
-    p = Project(src)
+function pdf(src, dst=nothing; keywords...)
+    p = Project(src; keywords...)
     p === nothing && return nothing
     sandbox(dst) do
         tree = rename(p.tree, pwd())
@@ -241,7 +241,7 @@ function pdf(src, dst=nothing)
 end
 
 function init(p::Project, ::typeof(pdf); dir=nothing, kws...)
-    pdf(p, dir)
+    pdf(p, dir; kws...)
     pdf_viewer = Sys.iswindows() ? "start" : Sys.isapple() ? "open" : "xdg-open"
     run(`$pdf_viewer $(joinpath(dir, p.env["name"] * ".pdf"))`)
 end

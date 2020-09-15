@@ -40,14 +40,24 @@ iscell(d::AbstractDict) = haskey(d, "cell") || get(d, "element", "") == "cell"
 # ## Cell Evaluator
 
 """
-    moduleof(cell)
+    moduleof(env, cell)
 
 Returns the cached `Module` associated with a [`Cell`](#). Creates a new one if
-there is not associated with the cell.
+there is not associated with the cell. `env` is the environment used by the
+current writer, used here to import default modules into cells.
 """
-moduleof(c::Cell) = moduleof(c, get(c.node.meta, "cell", nothing))
-moduleof(c::Cell, id::AbstractString) = get!(()->Module(), c.rule.cache, id)
-moduleof(::Cell, ::Nothing) = Module()
+moduleof(env, c::Cell) = moduleof(env, c, get(c.node.meta, "cell", nothing))
+moduleof(env, c::Cell, id::AbstractString) = get!(()->cell_module(env), c.rule.cache, id)
+moduleof(env, ::Cell, ::Nothing) = cell_module(env)
+
+function cell_module(env)
+    outmod = Module()
+    for each in get(() -> Module[], env, "cell-imports")
+        name = gensym()
+        Core.eval(outmod, :($name=$each; using .$name))
+    end
+    return outmod
+end
 
 """
     display_as(default, cell, writer, [mimes...])
@@ -62,7 +72,7 @@ function display_as(default, cell, w, mimes)
     show_result = get(cell.node.meta, "result", "true")
     ## Evaluate the cell contents in a sandboxed module, possibly reusing one
     ## from an earlier cell if the names match.
-    mod = moduleof(cell)
+    mod = moduleof(w.env, cell)
     result, success, bt, output = capture_output() do
         include_string(mod, cell.node.literal)
     end
