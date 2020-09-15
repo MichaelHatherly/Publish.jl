@@ -1,7 +1,7 @@
 name = "Publish"
 uuid = "f065f642-d108-4f50-8aa5-6749150a895a"
 authors = ["Michael Hatherly <michaelhatherly@gmail.com>"]
-version = "0.3.0"
+version = "0.4.0"
 
 [deps]
 CommonMark = "a80b9123-70ca-4bc0-993e-6e3bcb318db6"
