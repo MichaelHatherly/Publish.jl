@@ -1,5 +1,5 @@
-var PUBLISH_ROOT = '/Publish.jl/0.2.0';
-var PUBLISH_VERSION = "0.2.0";
+var PUBLISH_ROOT = '/Publish.jl/0.4.0';
+var PUBLISH_VERSION = "0.4.0";
 var PUBLISH_VERSIONS = [
     ["dev","/Publish.jl/dev/index.html"],
     ["0.4.0","/Publish.jl/0.4.0/index.html"],

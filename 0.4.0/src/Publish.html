@@ -25,20 +25,67 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='moduleof'>
-<p><code>private</code> <code>moduleof</code> — <code>function</code></p>
-<div class='doc' id='1'>
-<pre><code>moduleof(env, cell)
+    <main id="page"><article><h1 id="publishjl-literate-source-code"><a href="#publishjl-literate-source-code" class="anchor"></a>Publish.jl Literate Source Code</h1>
+<p>This package can use Julia source files as a content source, similar to
+normal markdown files. It uses the same syntax to mark source lines as either
+markdown content or codeblocks. You can read about the details of literate
+Julia files <a href="../docs/sources.html#literate-julia">here</a>.</p>
+<div class="admonition info"><p class="admonition-title">Literate Programming</p>
+<p>These source file only make use of literate features as a test case for
+the package. They should not be thought of as a showcase for literate
+programming itself.</p>
+</div>
+<pre><code class="language-julia">module Publish
 </code></pre>
-<p>Returns the cached <code>Module</code> associated with a <a href="Publish.Cell.html"><code>Cell</code></a>. Creates a new one if
-there is not associated with the cell. <code>env</code> is the environment used by the
-current writer, used here to import default modules into cells.</p>
-</div>
-</div>
+<h2 id="exports"><a href="#exports" class="anchor"></a>Exports</h2>
+<pre><code class="language-julia">export html, pdf, serve, deploy, setup
+</code></pre>
+<h2 id="imports"><a href="#imports" class="anchor"></a>Imports</h2>
+<pre><code class="language-julia">import CommonMark
+import DataStructures
+import IterTools
+import JSON
+import LiveServer
+import Mustache
+import Pkg
+import Pkg.TOML
+import Requires
+import Tectonic
+
+using FilePathsBase
+using FileTrees
+using Logging
+</code></pre>
+<h2 id="configuration"><a href="#configuration" class="anchor"></a>Configuration</h2>
+<pre><code class="language-julia">const DAGGER = Ref(false)
+const LAZY = Ref(true)
+</code></pre>
+<h2 id="includes"><a href="#includes" class="anchor"></a>Includes</h2>
+<pre><code class="language-julia">include(&quot;projects.jl&quot;)
+include(&quot;themes.jl&quot;)
+include(&quot;load.jl&quot;)
+include(&quot;cells.jl&quot;)
+include(&quot;save.jl&quot;)
+include(&quot;serve.jl&quot;)
+include(&quot;deploy.jl&quot;)
+include(&quot;tools.jl&quot;)
+include(&quot;utilities.jl&quot;)
+</code></pre>
+<h2 id="package-initialisation"><a href="#package-initialisation" class="anchor"></a>Package Initialisation</h2>
+<p>Revise.jl is an optional dependency, we use Requires.jl to define a
+<a href="../docstrings/Publish.revise.html"><code>revise</code></a> method when it is available that triggers <code>Revise.revise</code>.</p>
+<pre><code class="language-julia">function __init__()
+    Requires.@require Revise=&quot;295af30f-e4ad-537b-8983-00126c2a3abe&quot; begin
+        revise(::Project) = Revise.revise()
+    end
+end
+
+end # module
+</code></pre>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.loadtheme.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.modules.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="..&#x2F;docstrings.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="projects.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

@@ -25,20 +25,28 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='moduleof'>
-<p><code>private</code> <code>moduleof</code> — <code>function</code></p>
-<div class='doc' id='1'>
-<pre><code>moduleof(env, cell)
+    <main id="page"><article><h1 id="example-jupyter-notebooks"><a href="#example-jupyter-notebooks" class="anchor"></a>Example Jupyter Notebooks</h1>
+<p>This page has been written as a Jupyter Notebook, which was introduced in the <a href="../docs/sources.html#jupyter-notebooks">Jupyter Notebooks</a> section of the manual. The notebooks provided in this package are just illustrative of how you can integrate notebooks into the rest of your project and still allow for cross references between different parts of the finished document.</p>
+<p>Let’s load the required packages. We’re using <code>Revise</code> as well since <code>Publish</code> integrates well with it and allows you to update your package <code>src/</code> contents, such as docstrings, and have the changes reflected in the document output immediately if you’re using the <a href="../docstrings/Publish.serve.html"><code>serve</code></a> function.</p>
+<pre><code class="language-julia">using Revise, Publish
 </code></pre>
-<p>Returns the cached <code>Module</code> associated with a <a href="Publish.Cell.html"><code>Cell</code></a>. Creates a new one if
-there is not associated with the cell. <code>env</code> is the environment used by the
-current writer, used here to import default modules into cells.</p>
-</div>
-</div>
+<p>You can use <a href="../docstrings/Publish.html.html"><code>html</code></a> to do a one time build of the project:</p>
+<pre><code class="language-julia">html(Publish)
+</code></pre>
+<p>PDFs can be built using <a href="../docstrings/Publish.pdf.html"><code>pdf</code></a> in a similar way to <a href="../docstrings/Publish.html.html"><code>html</code></a> above:</p>
+<pre><code class="language-julia">pdf(Publish)
+</code></pre>
+<p>You probably want to use <a href="../docstrings/Publish.serve.html"><code>serve</code></a> instead though, since that’ll spin up a web-server to host your project locally and allow you to view changes in real-time.</p>
+<pre><code class="language-julia">serve(Publish, html, pdf)
+</code></pre>
+<h2 id="deploying-projects"><a href="#deploying-projects" class="anchor"></a>Deploying Projects</h2>
+<p>We usually don’t build our projects in isolation and want others to be able to view our results. For this you can use <a href="../docstrings/Publish.deploy.html"><code>deploy</code></a>. This function will build your project in the provided directory in a versioned subdirectory.</p>
+<pre><code class="language-julia">deploy(Publish, &quot;build&quot;)
+</code></pre>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.loadtheme.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.modules.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="..&#x2F;docs&#x2F;syntax.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="cells.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

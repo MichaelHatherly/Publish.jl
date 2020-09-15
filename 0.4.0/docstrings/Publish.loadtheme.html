@@ -25,20 +25,23 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='moduleof'>
-<p><code>private</code> <code>moduleof</code> — <code>function</code></p>
+    <main id="page"><article><div class='docs' id='loadtheme'>
+<p><code>private</code> <code>loadtheme</code> — <code>function</code></p>
 <div class='doc' id='1'>
-<pre><code>moduleof(env, cell)
+<pre><code>loadtheme(tree, env)
 </code></pre>
-<p>Returns the cached <code>Module</code> associated with a <a href="Publish.Cell.html"><code>Cell</code></a>. Creates a new one if
-there is not associated with the cell. <code>env</code> is the environment used by the
-current writer, used here to import default modules into cells.</p>
+<p>Searches the given <code>env</code> configuration for a Publish.jl theme and loads it into
+the provided <code>tree</code>. Since <code>tree</code> is immutable the updated version is returned
+along with a new <code>env</code> containing any merged data from the theme.</p>
+<p><code>loadtheme</code> looks for a <code>publish.theme</code> key in the <code>env</code> and tries to call the
+function defined by the value of the key.</p>
+<p>The themes included with this package are listed in the <a href="Publish.Themes.html"><code>Themes</code></a> module.</p>
 </div>
 </div>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.loadtheme.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.modules.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="Publish.loadpages.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="Publish.moduleof.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

@@ -25,20 +25,67 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='moduleof'>
-<p><code>private</code> <code>moduleof</code> — <code>function</code></p>
+    <main id="page"><article><div class='docs' id='deploy'>
+<p><code>public</code> <code>deploy</code> — <code>function</code></p>
 <div class='doc' id='1'>
-<pre><code>moduleof(env, cell)
+<pre><code>deploy(
+    source, [dir=&quot;.&quot;], [targets...=html];
+    versioned=true,
+    named=false,
+    force=false,
+    label=nothing,
+)
 </code></pre>
-<p>Returns the cached <code>Module</code> associated with a <a href="Publish.Cell.html"><code>Cell</code></a>. Creates a new one if
-there is not associated with the cell. <code>env</code> is the environment used by the
-current writer, used here to import default modules into cells.</p>
+<p>Build the <code>source</code> using the given <code>targets</code> list in the <code>dir</code> directory.
+<code>source</code> can be either a <code>Module</code> or a <code>String</code> representing a <code>Project.toml</code>
+path.</p>
+<p>Keyword arguments can be used to control resulting directory structure.</p>
+<ul id="keywords">
+<li>
+<p><code>versioned</code> and <code>named</code>.</p>
+<p>These keywords will place the built files in either a versioned subdirectory,
+or a named subdirectory of <code>dir</code>, or both (with name superceding version).</p>
+<p>The values for <code>name</code> and <code>version</code> are taken from those provided in the
+project’s <code>Project.toml</code> file. If these values are not specified then the
+“deployment” will fail.</p>
+</li>
+<li>
+<p><code>force</code> will remove the calculated build path prior to building
+if it already exists.</p>
+</li>
+<li>
+<p><code>label</code> specifies a temporal folder name to copy the finished build to.
+This can be used to build a “tracking” version of documentation such as a
+“dev” or “stable” that changes over time while still retaining the exact
+versioned builds.</p>
+</li>
+</ul>
+<h2 id="examples"><a href="#examples" class="anchor"></a>Examples</h2>
+<p>In the following examples our project will be the <code>Publish</code> package. This can
+be switched out for any other project source, such as a Julia package or a
+simple <code>Project.toml</code> file.</p>
+<pre><code class="language-julia">deploy(Publish, &quot;build&quot;)
+</code></pre>
+<p>writes the output to the <code>&quot;build&quot;</code> subdirectory of the current directory.
+There will be a <code>build/&lt;version&gt;</code> folder containing HTML content.</p>
+<pre><code class="language-julia">deploy(Publish, &quot;build&quot;, pdf)
+</code></pre>
+<p>does the same as above, but build the <a href="Publish.pdf.html"><code>pdf</code></a> output instead.</p>
+<pre><code class="language-julia">deploy(Publish, &quot;all-docs&quot;, pdf, html)
+</code></pre>
+<p>or build everything at once.</p>
+<p>The keyword arguments control other aspects of the build, as shown
+<a href="#keywords">above</a>. For example,</p>
+<pre><code class="language-julia">deploy(Publish, &quot;ecosystem&quot;; named=true)
+</code></pre>
+<p>would build <code>Publish</code> documentation to an <code>ecosystem/Publish/&lt;version&gt;</code>
+subdirectory.</p>
 </div>
 </div>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.loadtheme.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.modules.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="Publish.categorise.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="Publish.display_as.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

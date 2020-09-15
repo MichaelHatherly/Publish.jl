@@ -25,20 +25,37 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='moduleof'>
-<p><code>private</code> <code>moduleof</code> — <code>function</code></p>
-<div class='doc' id='1'>
-<pre><code>moduleof(env, cell)
+    <main id="page"><article><h1 id="custom-themes"><a href="#custom-themes" class="anchor"></a>Custom Themes</h1>
+<p>Aside from altering the templates and providing your own custom CSS and JS
+files you may also create a fully customised theme that does not use any of the
+default assets shipped with Publish.</p>
+<p>To write your own theme create a folder with the name of your theme and add a
+<code>Theme.toml</code> file to it.</p>
+<div class="admonition tip"><p class="admonition-title">Tip</p>
+<p>Add an underscore at the start of your folder name so that Publish won’t
+load it’s content automatically. We’ll be adding the path manually to your
+<code>[publish]</code> section of the project’s configuration file.</p>
+</div>
+<p>Add the supporting assets, such as CSS, JS, and Mustache templates to the theme
+folder and then reference them in your <code>_my_theme_folder/Theme.toml</code> file like so</p>
+<pre><code class="language-toml">theme = &quot;theme_name&quot;
+
+[html]
+default_css = [&quot;custom.css&quot;]
+default_js = [&quot;custom.js&quot;]
+template = {file = &quot;custom_html.mustache&quot;}
+
+[latex]
+template = {file = &quot;custom_latex.mustache&quot;}
 </code></pre>
-<p>Returns the cached <code>Module</code> associated with a <a href="Publish.Cell.html"><code>Cell</code></a>. Creates a new one if
-there is not associated with the cell. <code>env</code> is the environment used by the
-current writer, used here to import default modules into cells.</p>
-</div>
-</div>
+<p>and then in your project’s <code>Project.toml</code> file add a reference to this folder</p>
+<pre><code class="language-toml">[publish]
+theme = &quot;_my_theme_folder&quot;
+</code></pre>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.loadtheme.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.modules.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="templates.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="sources.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

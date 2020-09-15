@@ -25,20 +25,45 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='moduleof'>
-<p><code>private</code> <code>moduleof</code> — <code>function</code></p>
-<div class='doc' id='1'>
-<pre><code>moduleof(env, cell)
-</code></pre>
-<p>Returns the cached <code>Module</code> associated with a <a href="Publish.Cell.html"><code>Cell</code></a>. Creates a new one if
-there is not associated with the cell. <code>env</code> is the environment used by the
-current writer, used here to import default modules into cells.</p>
+    <main id="page"><article><h1 id="source-types"><a href="#source-types" class="anchor"></a>Source Types</h1>
+<p>Up until now we’ve been using markdown files for our source content — those
+ending with <code>.md</code>. <code>Publish</code> also allows using several other file types to be
+used in place of markdown files, so long as the text is formatted as markdown.</p>
+<h2 id="jupyter-notebooks"><a href="#jupyter-notebooks" class="anchor"></a>Jupyter Notebooks</h2>
+<p>Notebook files, those ending with <code>.ipynb</code>, can be imported in the same way as
+<code>.md</code> files in your <code>toc.md</code> or <code>pages = </code> configuration. They will behave in
+the exact same way.</p>
+<p>Saving your notebooks within a normal Jupyter session will be reflected in your
+<code>Publish</code> server just like it is when saving normal markdown files.</p>
+<div class="admonition info"><p class="admonition-title">Info</p>
+<p>All source code cells are treated a <code>julia</code> code blocks in the resulting
+<code>Publish</code> output.</p>
 </div>
-</div>
-</article>
+<h2 id="literate-julia"><a href="#literate-julia" class="anchor"></a>Literate Julia</h2>
+<p>Julia source code can also be read by <code>Publish</code>. The syntax used is a stripped
+down version of that available in <a href="https://fredrikekre.github.io/Literate.jl/">Literate.jl</a>. All the source code for this
+package is available for browsing within this document, via the <em>Source Code</em>
+section in the navigation menu. To summarise,</p>
+<ul>
+<li>lines starting with a single <code>#</code>, with any amount of leading whitespace is
+treated as a line of markdown content,</li>
+<li>lines with a double <code>##</code> are treated as a normal comment and the output
+will have one <code>#</code> stripped from it,</li>
+<li>other lines are treated as source code and not modified,</li>
+<li>none of the code blocks are executed,</li>
+<li><code>Publish</code> does not currently support Literate.jl’s filters such as <code>#md</code>,
+<code>#jl</code>, <code>#nb</code>, <code>#-</code>, or <code>#+</code>,</li>
+<li><code>#src</code> unconditional filtering is supported. Any line containing <code>#src</code>
+will be stripped from the output.</li>
+</ul>
+<div class="admonition tip"><p class="admonition-title">Tip</p>
+<p><code>Publish</code> should play nicely with <a href="https://timholy.github.io/Revise.jl/stable/">Revise.jl</a> and simply importing
+<code>Revise</code> prior to <code>Publish</code> and your own package will be enough to allow
+for Revise-style development when using <code>Publish</code>.</p>
+</div></article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.loadtheme.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.modules.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="themes.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="cells.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

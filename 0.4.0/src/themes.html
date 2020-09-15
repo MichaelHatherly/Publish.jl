@@ -25,20 +25,61 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='moduleof'>
-<p><code>private</code> <code>moduleof</code> — <code>function</code></p>
-<div class='doc' id='1'>
-<pre><code>moduleof(env, cell)
+    <main id="page"><article><h1 id="themes"><a href="#themes" class="anchor"></a>Themes</h1>
+<pre><code class="language-julia">&quot;&quot;&quot;
+Namespace for all themes that are provided with the package.
+
+Themes defined here should be 0-arity functions that return the absolute path
+to the folder containing the theme definition.
+
+Provided themes are currently:
+
+  - [`default`](# &quot;`Themes.default`&quot;)
+&quot;&quot;&quot;
+module Themes
+
+&quot;&quot;&quot;
+The &quot;default&quot; theme used by this package.
+&quot;&quot;&quot;
+const default = abspath(joinpath(@__DIR__, &quot;..&quot;, &quot;_themes&quot;, &quot;default&quot;))
+
+end
 </code></pre>
-<p>Returns the cached <code>Module</code> associated with a <a href="Publish.Cell.html"><code>Cell</code></a>. Creates a new one if
-there is not associated with the cell. <code>env</code> is the environment used by the
-current writer, used here to import default modules into cells.</p>
-</div>
-</div>
+<h2 id="theme-loader"><a href="#theme-loader" class="anchor"></a>Theme Loader</h2>
+<pre><code class="language-julia">&quot;&quot;&quot;
+    loadtheme(tree, env)
+
+Searches the given `env` configuration for a Publish.jl theme and loads it into
+the provided `tree`. Since `tree` is immutable the updated version is returned
+along with a new `env` containing any merged data from the theme.
+
+`loadtheme` looks for a `publish.theme` key in the `env` and tries to call the
+function defined by the value of the key.
+
+The themes included with this package are listed in the [`Themes`](#) module.
+&quot;&quot;&quot;
+function loadtheme(tree::FileTree, env::AbstractDict)
+    theme = env[&quot;publish&quot;][&quot;theme&quot;]
+    file = joinpath(path(tree), theme, &quot;Theme.toml&quot;)
+    if !isfile(file)
+        bind = binding(theme)
+        dir = joinpath(Docs.defined(bind) ? Docs.resolve(bind) : Themes.default)
+        file = joinpath(dir, &quot;Theme.toml&quot;)
+        isfile(file) || error(&quot;'$theme' theme does not exist.&quot;)
+    end
+    dict = TOML.parsefile(string(file))
+    env = rmerge(env, Dict(&quot;publish&quot; =&gt; dict))
+    tree′ = FileTree(dirname(file))
+    tree′ = FileTrees.load(tree′; lazy=LAZY[]) do file
+        loadfile(env, joinpath(basename(tree′), path(file)))
+    end
+    return merge(tree, rename(tree′, basename(tree))), env
+end
+</code></pre>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.loadtheme.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.modules.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="projects.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="load.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

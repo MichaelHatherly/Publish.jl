@@ -25,20 +25,77 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><div class='docs' id='moduleof'>
-<p><code>private</code> <code>moduleof</code> — <code>function</code></p>
-<div class='doc' id='1'>
-<pre><code>moduleof(env, cell)
+    <main id="page"><article><pre><code class="language-julia">&quot;&quot;&quot;
+    setup(dir)
+
+Initialise a `Publish` project in the given directory `dir`, which is created
+if it does not already exist.
+
+When `dir` has a Julia project structure with a `Project.toml` file then
+`Publish` is added to it's dependencies list, otherwise, if it is not a Julia
+package then a `Project.toml` file is created as well as a `README.md` file.
+
+# Keywords
+
+  - `pkg::Bool=true` can be set to `false` to disable all `Pkg` calls during
+    use of `setup`.
+&quot;&quot;&quot;
+function setup(dir; pkg=true)
+    isdir(dir) || mkpath(dir)
+    cd(dir) do
+        _, name = splitdir(pwd())
+        # Project setup.
+        proj = &quot;Project.toml&quot;
+        if isfile(proj)
+            @info &quot;found '$proj'. Using it.&quot;
+        else
+            @info &quot;no '$proj' found. Creating one.&quot;
+            uuid = string(Base.identify_package(&quot;Publish&quot;).uuid)
+            toml = &quot;&quot;&quot;
+            name = &quot;$name&quot;
+
+            [deps]
+            Publish = &quot;$uuid&quot;
+            &quot;&quot;&quot;
+            write(proj, toml)
+        end
+        if pkg
+            @info &quot;Activating and instantiating '$proj'.&quot;
+            Pkg.activate(proj)
+            Pkg.instantiate()
+            @info &quot;Adding 'Publish' to project dependencies.&quot;
+            Pkg.add(&quot;Publish&quot;)
+        end
+        # Content setup.
+        readme = &quot;README.md&quot;
+        if isfile(readme)
+            @info &quot;found '$readme'.&quot;
+        else
+            @info &quot;no '$readme' found, creating one.&quot;
+            write(readme, &quot;# $name\n&quot;)
+        end
+        # Create github actions workflow.
+        action = &quot;.github/workflows/Publish.yml&quot;
+        if isfile(action)
+            @warn &quot;This project already has a 'Publish.yml' workflow.&quot;
+        else
+            @info &quot;Creating a GitHub Actions workflow for deployment.&quot;
+            mkpath(dirname(action))
+            contents = read(joinpath(@__DIR__, &quot;templates&quot;, &quot;Publish.yml&quot;), String)
+            open(action, &quot;w&quot;) do handle
+                write(handle, contents)
+            end
+        end
+        # Display a message for users to help them start a server.
+        path = joinpath(pwd(), proj)
+        @info &quot;run `serve($(repr(path)))` to start a server.&quot;
+    end
+end
 </code></pre>
-<p>Returns the cached <code>Module</code> associated with a <a href="Publish.Cell.html"><code>Cell</code></a>. Creates a new one if
-there is not associated with the cell. <code>env</code> is the environment used by the
-current writer, used here to import default modules into cells.</p>
-</div>
-</div>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="Publish.loadtheme.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="Publish.modules.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="deploy.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="utilities.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
