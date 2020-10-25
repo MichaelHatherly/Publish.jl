@@ -20,6 +20,7 @@ export html, pdf, serve, deploy, setup
 
 import CommonMark
 import DataStructures
+import IOCapture
 import IterTools
 import JSON
 import LiveServer
