@@ -73,24 +73,24 @@ function display_as(default, cell, w, mimes)
     ## Evaluate the cell contents in a sandboxed module, possibly reusing one
     ## from an earlier cell if the names match.
     mod = moduleof(w.env, cell)
-    result, success, bt, output = capture_output() do
+    c = IOCapture.iocapture(throwerrors=false) do
         include_string(mod, cell.node.literal)
     end
-    if !isempty(output) && show_output == "true"
+    if !isempty(c.output) && show_output == "true"
         ## There's been some output to the stream, put that in
         ## a verbatim block before the real output so long as
         ## `output=false` was not set for the cell.
         out = CommonMark.Node(CommonMark.CodeBlock())
         out.meta["class"] = ["plaintext", "cell-output", "cell-stream"]
-        out.literal = output
+        out.literal = c.output
         default(out.t, w, out, true)
     end
     show_result == "true" || return nothing # Display result unless `result=false` was set.
-    result === nothing && return nothing # Skip `nothing` results.
+    c.value === nothing && return nothing # Skip `nothing` results.
     for mime in mimes
-        if showable(mime, result)
+        if showable(mime, c.value)
             ## We've found a suitable mimetype, display as that.
-            limitedshow(w.buffer, default, mime, result)
+            limitedshow(w.buffer, default, mime, c.value)
             return nothing
         end
     end
@@ -98,7 +98,7 @@ function display_as(default, cell, w, mimes)
     code = CommonMark.Node(CommonMark.CodeBlock())
     code.t.info = "plaintext"
     code.meta["class"] = ["plaintext", "cell-output", "cell-result"]
-    code.literal = limitedshow(default, MIME("text/plain"), result)
+    code.literal = limitedshow(default, MIME("text/plain"), c.value)
     default(code.t, w, code, true)
     return nothing
 end
@@ -157,50 +157,6 @@ function limitedshow(io::IO, fn, mime::IMAGE_MIMES, result)
     node = CommonMark.Node(CommonMark.Image())
     node.t.destination = name
     return cm_wrapper(fn)(io, node)
-end
-
-# ## Capturing Cell Output
-#
-# The following function is taken from Documenter's source, MIT licensed.
-function capture_output(f)
-    ## Save the default output streams.
-    default_stdout = stdout
-    default_stderr = stderr
-
-    ## Redirect both the `stdout` and `stderr` streams to a single `Pipe` object.
-    pipe = Pipe()
-    Base.link_pipe!(pipe; reader_supports_async = true, writer_supports_async = true)
-    redirect_stdout(pipe.in)
-    redirect_stderr(pipe.in)
-    ## Also redirect logging stream to the same pipe
-    logger = ConsoleLogger(pipe.in)
-
-    ## Bytes written to the `pipe` are captured in `output` and converted to a `String`.
-    output = UInt8[]
-
-    ## Run the function `f`, capturing all output that it might have generated.
-    ## Success signals whether the function `f` did or did not throw an exception.
-    result, success, backtrace = with_logger(logger) do
-        try
-            f(), true, Vector{Ptr{Cvoid}}()
-        catch err
-            ## InterruptException should never happen during normal doc-testing
-            ## and not being able to abort the doc-build is annoying (#687).
-            isa(err, InterruptException) && rethrow(err)
-
-            err, false, catch_backtrace()
-        finally
-            ## Force at least a single write to `pipe`, otherwise `readavailable` blocks.
-            println()
-            ## Restore the original output streams.
-            redirect_stdout(default_stdout)
-            redirect_stderr(default_stderr)
-            ## NOTE: `close` must always be called *after* `readavailable`.
-            append!(output, readavailable(pipe))
-            close(pipe)
-        end
-    end
-    return result, success, backtrace, chomp(String(output))
 end
 
 # ## CommonMark Writers
