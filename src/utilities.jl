@@ -16,8 +16,9 @@ sandbox(f, temp::AbstractString) = isdir(temp) ? cd(f, temp) : (mkpath(temp); cd
 
 Returns a new `CommonMark.Parser` object with all extensions enabled.
 """
-function init_markdown_parser()
+function init_markdown_parser(env=Dict())
     cm = CommonMark
+    imports = get(() -> Module[], env, "cell-imports")
     return cm.enable!(cm.Parser(), [
         ## CommonMark-provided.
         cm.AdmonitionRule(),
@@ -32,7 +33,7 @@ function init_markdown_parser()
         cm.TableRule(),
         cm.TypographyRule(),
         ## Publish-provided.
-        CellRule(), # TODO: insert cache here maybe.
+        CellRule(imports = imports),
     ])
 end
 

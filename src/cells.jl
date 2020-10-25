@@ -5,59 +5,77 @@
 
 """
 A CommonMark rule used to define the "cell" parser. A `CellRule` holds a
-`.cache` of the `Module`s that have been defined in a markdown document to that
+`.cache` of the `Module`s that have been defined in a markdown document so that
 cells can depend on definitions and values from previous cells.
 """
-struct CellRule
-    cache::Dict{String,Module}
-    CellRule(cache=Dict()) = new(cache)
+Base.@kwdef struct CellRule
+    cache::Dict{String,Module} = Dict()
+    imports::Vector{Module} = []
 end
+
+struct Embedded <: CommonMark.AbstractBlock end
+
+CommonMark.is_container(::Embedded) = true
+
+CommonMark.write_html(::Embedded, w, n, ent) = nothing
+CommonMark.write_latex(::Embedded, w, n, ent) = nothing
+CommonMark.write_term(::Embedded, w, n, ent) = nothing
+CommonMark.write_markdown(::Embedded, w, n, ent) = nothing
 
 """
     struct Cell
 
 A custom node type for CommonMark.jl that holds an executable "cell" of code.
 """
-mutable struct Cell <: CommonMark.AbstractBlock
-    rule::CellRule
+struct Cell <: CommonMark.AbstractBlock
     node::CommonMark.Node
+    value::Any
+    output::String
 end
-
-# The `block_modifier` definition hooks into the markdown parser to allow for
-# modifying each Julia code block that has a [cell attribute](# "Attributes")
-# attached.
 
 CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
     if isjuliacode(node) && iscell(node.meta)
-        CommonMark.insert_after(node, CommonMark.Node(Cell(c, node)))
+        # Load the module for the current cell and evaluate the contents.
+        sandbox = getmodule!(c, node)
+        captured = IOCapture.iocapture(throwerrors=false) do
+            include_string(sandbox, node.literal)
+        end
+        # When the value is displayable as markdown then we reparse that
+        # representation and include the resulting AST in it's place.
+        # Otherwise we just capture it's value and output for display later as
+        # a normal cell.
+        if showable(MIME("text/markdown"), captured.value)
+            text = Base.invokelatest(() -> sprint(show, MIME("text/markdown"), captured.value))
+            subparser = CommonMark.disable!(CommonMark.Parser(), parser.rules)
+            CommonMark.enable!(subparser, parser.rules)
+            ast = subparser(text)
+            ast.t = Embedded()
+            CommonMark.insert_after(node, ast)
+            CommonMark.unlink(node)
+        else
+            cell = Cell(node, captured.value, captured.output)
+            CommonMark.insert_after(node, CommonMark.Node(cell))
+        end
     end
     return nothing
+end
+
+function getmodule!(rule::CellRule, node::CommonMark.Node)
+    id = get!(string ∘ gensym, node.meta, "cell")
+    return get!(rule.cache, id) do
+        sandbox = Module() # TODO: named.
+        for each in rule.imports
+            name = gensym()
+            Core.eval(sandbox, :($name=$each; using .$name))
+        end
+        return sandbox
+    end
 end
 
 isjuliacode(n::CommonMark.Node) = n.t isa CommonMark.CodeBlock && n.t.info == "julia"
 iscell(d::AbstractDict) = haskey(d, "cell") || get(d, "element", "") == "cell"
 
 # ## Cell Evaluator
-
-"""
-    moduleof(env, cell)
-
-Returns the cached `Module` associated with a [`Cell`](#). Creates a new one if
-there is not associated with the cell. `env` is the environment used by the
-current writer, used here to import default modules into cells.
-"""
-moduleof(env, c::Cell) = moduleof(env, c, get(c.node.meta, "cell", nothing))
-moduleof(env, c::Cell, id::AbstractString) = get!(()->cell_module(env), c.rule.cache, id)
-moduleof(env, ::Cell, ::Nothing) = cell_module(env)
-
-function cell_module(env)
-    outmod = Module()
-    for each in get(() -> Module[], env, "cell-imports")
-        name = gensym()
-        Core.eval(outmod, :($name=$each; using .$name))
-    end
-    return outmod
-end
 
 """
     display_as(default, cell, writer, [mimes...])
@@ -72,25 +90,21 @@ function display_as(default, cell, w, mimes)
     show_result = get(cell.node.meta, "result", "true")
     ## Evaluate the cell contents in a sandboxed module, possibly reusing one
     ## from an earlier cell if the names match.
-    mod = moduleof(w.env, cell)
-    c = IOCapture.iocapture(throwerrors=false) do
-        include_string(mod, cell.node.literal)
-    end
-    if !isempty(c.output) && show_output == "true"
+    if !isempty(cell.output) && show_output == "true"
         ## There's been some output to the stream, put that in
         ## a verbatim block before the real output so long as
         ## `output=false` was not set for the cell.
         out = CommonMark.Node(CommonMark.CodeBlock())
         out.meta["class"] = ["plaintext", "cell-output", "cell-stream"]
-        out.literal = c.output
+        out.literal = cell.output
         default(out.t, w, out, true)
     end
     show_result == "true" || return nothing # Display result unless `result=false` was set.
-    c.value === nothing && return nothing # Skip `nothing` results.
+    cell.value === nothing && return nothing # Skip `nothing` results.
     for mime in mimes
-        if showable(mime, c.value)
+        if showable(mime, cell.value)
             ## We've found a suitable mimetype, display as that.
-            limitedshow(w.buffer, default, mime, c.value)
+            limitedshow(w.buffer, default, mime, cell.value)
             return nothing
         end
     end
@@ -98,7 +112,7 @@ function display_as(default, cell, w, mimes)
     code = CommonMark.Node(CommonMark.CodeBlock())
     code.t.info = "plaintext"
     code.meta["class"] = ["plaintext", "cell-output", "cell-result"]
-    code.literal = limitedshow(default, MIME("text/plain"), c.value)
+    code.literal = limitedshow(default, MIME("text/plain"), cell.value)
     default(code.t, w, code, true)
     return nothing
 end

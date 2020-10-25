@@ -51,7 +51,10 @@ Loads a file. Extended by `loadfile` methods that dispatch based on the
 """
 loadfile(env::AbstractDict, path::AbstractPath) = loadfile(Extension(path), env, path)
 
-loadfile(::Extension{:md}, env, path) = open(load_markdown, path)
+loadfile(::Extension{:md}, env, path) = open(path) do io
+    parser = init_markdown_parser(env["publish"])
+    load_markdown(io, parser)
+end
 
 function loadfile(::Extension{:jl}, env, path)
     io = IOBuffer()
@@ -91,7 +94,8 @@ function loadfile(::Extension{:jl}, env, path)
     end
     ## Clean up last code block.
     code_block_helper(state)
-    return load_markdown(io)
+    parser = init_markdown_parser(env["publish"])
+    return load_markdown(io, parser)
 end
 
 function loadfile(::Extension{:ipynb}, env, path)
@@ -114,7 +118,8 @@ function loadfile(::Extension{:ipynb}, env, path)
             end
         end
     end
-    return load_markdown(io)
+    parser = init_markdown_parser(env["publish"])
+    return load_markdown(io, parser)
 end
 
 loadfile(::Extension, env, path) = read(path)
@@ -162,7 +167,8 @@ function loaddocs(tree::FileTree, env::AbstractDict, pages::Vector)
             end
             println(io, "```{=html}\n</div>\n```")
         end
-        return load_markdown(io)
+        parser = init_markdown_parser(env["publish"])
+        return load_markdown(io, parser)
     end
     return merge(tree, dtree), pages
 end

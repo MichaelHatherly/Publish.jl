@@ -37,3 +37,17 @@ f(1)
 # {cell=example output=false style="display: none"}
 
 methods(f)
+
+# Finally, we can also create types that have a `show` method defined for
+# `text/markdown`. This allows us to embed arbitrary generated markdown
+# within a parent document.
+#
+# {:cell}
+
+struct Boldify
+    x
+end
+
+Base.show(io::IO, ::MIME"text/markdown", b::Boldify) = print(io, "**", b.x, "**")
+
+Boldify("This text will appear in bold.")
