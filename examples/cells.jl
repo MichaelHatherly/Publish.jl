@@ -44,8 +44,6 @@ methods(f)
 #
 # {cell=embedded}
 
-using Markdown
-
 struct Boldify
     x
 end
@@ -53,6 +51,10 @@ end
 Base.show(io::IO, ::MIME"text/markdown", b::Boldify) = print(io, "**", b.x, "**")
 
 Boldify("This text will appear in bold.")
+
+# {cell=embedded style="display: none"}
+
+using Markdown
 
 # Inline cells are also possible. The source that produces them will not be
 # displayed though, only the resulting value. `stdout` and `stderr` will not
