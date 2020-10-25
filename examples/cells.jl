@@ -42,7 +42,9 @@ methods(f)
 # `text/markdown`. This allows us to embed arbitrary generated markdown
 # within a parent document.
 #
-# {:cell}
+# {cell=embedded}
+
+using Markdown
 
 struct Boldify
     x
@@ -51,3 +53,12 @@ end
 Base.show(io::IO, ::MIME"text/markdown", b::Boldify) = print(io, "**", b.x, "**")
 
 Boldify("This text will appear in bold.")
+
+# Inline cells are also possible. The source that produces them will not be
+# displayed though, only the resulting value. `stdout` and `stderr` will not
+# show either. If the resulting value can be displayed as `text/markdown` it's
+# AST will be embedded, like above with the block cells, otherwise it will
+# appear as a ```md"`text/plain`"```{cell=embedded} wrapped in inline code. The
+# previous `text/plain` was embedded in the resulting AST using an inline cell
+# that evaluted the expression ```Markdown.md"`text/plain`"```. Values, such as
+# `1+2`{:cell} or `pi`{:cell}, will just display as inline code.

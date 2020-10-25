@@ -46,8 +46,7 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
         # a normal cell.
         if showable(MIME("text/markdown"), captured.value)
             text = Base.invokelatest(() -> sprint(show, MIME("text/markdown"), captured.value))
-            subparser = CommonMark.disable!(CommonMark.Parser(), parser.rules)
-            CommonMark.enable!(subparser, parser.rules)
+            subparser = init_markdown_parser()
             ast = subparser(text)
             ast.t = Embedded()
             CommonMark.insert_after(node, ast)
@@ -55,6 +54,37 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
         else
             cell = Cell(node, captured.value, captured.output)
             CommonMark.insert_after(node, CommonMark.Node(cell))
+        end
+    end
+    return nothing
+end
+
+struct EmbeddedInline <: CommonMark.AbstractInline end
+
+CommonMark.is_container(::EmbeddedInline) = true
+
+CommonMark.write_html(::EmbeddedInline, w, n, ent) = nothing
+CommonMark.write_latex(::EmbeddedInline, w, n, ent) = nothing
+CommonMark.write_term(::EmbeddedInline, w, n, ent) = nothing
+CommonMark.write_markdown(::EmbeddedInline, w, n, ent) = nothing
+
+CommonMark.inline_modifier(c::CellRule) = CommonMark.Rule(100) do parser, block
+    for (node, ent) in block
+        if ent && is_inline_code(node) && iscell(node.meta)
+            sandbox = getmodule!(c, node)
+            captured = IOCapture.iocapture(throwerrors=false) do
+                include_string(sandbox, node.literal)
+            end
+            if showable(MIME("text/markdown"), captured.value)
+                text = Base.invokelatest(() -> sprint(show, MIME("text/markdown"), captured.value))
+                subparser = init_markdown_parser()
+                ast = subparser(text).first_child
+                ast.t = EmbeddedInline()
+                CommonMark.insert_after(node, ast)
+                CommonMark.unlink(node)
+            else
+                node.literal = Base.invokelatest(() -> sprint(show, MIME("text/plain"), captured.value))
+            end
         end
     end
     return nothing
@@ -73,6 +103,7 @@ function getmodule!(rule::CellRule, node::CommonMark.Node)
 end
 
 isjuliacode(n::CommonMark.Node) = n.t isa CommonMark.CodeBlock && n.t.info == "julia"
+is_inline_code(n::CommonMark.Node) = n.t isa CommonMark.Code
 iscell(d::AbstractDict) = haskey(d, "cell") || get(d, "element", "") == "cell"
 
 # ## Cell Evaluator
