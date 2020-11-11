@@ -37,7 +37,7 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
     if isjuliacode(node) && iscell(node.meta)
         # Load the module for the current cell and evaluate the contents.
         sandbox = getmodule!(c, node)
-        captured = IOCapture.iocapture(throwerrors=false) do
+        captured = IOCapture.capture(rethrow=InterruptException) do
             include_string(sandbox, node.literal)
         end
         # When the value is displayable as markdown then we reparse that
@@ -72,7 +72,7 @@ CommonMark.inline_modifier(c::CellRule) = CommonMark.Rule(100) do parser, block
     for (node, ent) in block
         if ent && is_inline_code(node) && iscell(node.meta)
             sandbox = getmodule!(c, node)
-            captured = IOCapture.iocapture(throwerrors=false) do
+            captured = IOCapture.capture(rethrow=InterruptException) do
                 include_string(sandbox, node.literal)
             end
             if showable(MIME("text/markdown"), captured.value)
