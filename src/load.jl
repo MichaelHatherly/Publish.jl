@@ -10,9 +10,32 @@ function loadtoml(path::AbstractPath, globals)
             "pages" => ["README.md"],
             "toc" => "toc.md",
             "modules" => [],
+            "references" => [],
         ),
     )
     return rmerge(defaults, open(TOML.parse, path), globals)
+end
+
+function loadrefs(env)
+    # Loading of references/bibliography. We can either load a `.bib` file for
+    # use in LaTeX/PDF output, which turns on `citations = biblatex` for
+    # control of how citations are printed out to LaTeX.
+    #
+    # Our other option is to print out basic citations using a JSON or TOML
+    # source. TODO: write conversion from JSON/TOML to BIB and back so that we
+    # can use either source for biblatex bibliographies.
+    if haskey(env["publish"], "latex") && haskey(env["publish"]["latex"], "bibliography")
+        env["publish"]["citations"] = "biblatex"
+    else
+        refs = env["publish"]["references"]
+        if isa(refs, String) && isfile(refs)
+            # TODO: support YAML and XML as well?
+            env["publish"]["references"] =
+                endswith(refs, ".toml") ? TOML.parsefile(refs) :
+                endswith(refs, ".json") ? JSON.Parser.parsefile(refs) : []
+        end
+    end
+    return env
 end
 
 rtree(f, d) = isdir(d) ? (d => [cd(()->rtree(f, x), d) for x in readdir(d) if f(x)]) : d

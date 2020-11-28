@@ -66,11 +66,26 @@ method will be used to print the result.
     it's best practise to define the `show` method within that package so that
     it "owns" the method rather than defining it yourself.
 
-## Suppressing Output and Results
+## Markdown `MIME` type
+
+If a type captured in the result of a cell has a `show` method defined for the
+`MIME` type `text/markdown` then it will immediately be printed to this
+representation and then re-parsed by the markdown parser and embedded within
+the document's AST rather as a "dumb" value. This allows, for example,
+generated internal document links to be resolved correctly.
+
+If your type has suitable `show` definition, but you do not want to display as
+the AST then pass `markdown=false` as a cell attribute to use the normal
+display procedures instead.
+
+## Suppressing Input, Output, and Results
 
 You may need a cell's results or computations, but not want to display the
-result after that cell. This can be achieved using `output=false` and
-`result=false` attributes.
+result after that cell. This can be achieved using
+
+  - `display=false` to remove the cell itself from the final document,
+  - `output=false` to skip showing the `stdout` and `stderr` streams below the cell,
+  - `result=false` to suppress showing the resulting output value from the cell.
 
 ````markdown
 {cell=example output=false result=false}
@@ -95,3 +110,66 @@ And then a cell that prints the value of `y`, but does not display it's result.
 @show y
 ```
 
+## Figures
+
+Some results may have common requirements for their display within a finished document,
+such as displaying an image within a figure environment in a PDF document. Cells provide
+a default imported type called `Figure` which can wrap any type to provide some control
+over how it will be displayed.
+
+!!! info
+
+    Currently this is only supported for LaTeX/PDF output. HTML figure environments will
+    be added later.
+
+Figures can be created as follows:
+
+````markdown
+{cell}
+```julia
+p = plot(...)
+Figure(
+    p;
+    caption = "This is the caption text.",
+)
+```
+````
+
+Supported keywords, along with their default values, are:
+
+  - `placement = 'h'`: where on the page the figure should to be placed.
+  - `alignment = "center"`: horizontal alignment of the figure.
+  - `maxwidth = "\\linewidth"`: the maximum width that the image should take up.
+  - `caption = ""`: a simple caption to go with the figure.
+  - `desc = ""`: a short description to use in a *List of Figures*.
+
+## Tables
+
+Similar to `Figure` discussed above, we also have a `Table` object imported by default
+into cells that can be used to format tabular data in a more presentable way. Under the
+hood it uses `PrettyTables.jl` for the formatting.
+
+!!! info
+
+    Currently this is only supported for LaTeX/PDF output. HTML table environments will
+    be added later.
+
+Tables can be created as follows:
+
+````markdown
+{cell}
+```julia
+df = DataFrame(...) # Or any other "table"-like object that PrettyTables supports.
+Table(
+    df;
+    caption = "This is the caption text.",
+)
+```
+````
+
+Supported keywords, along with their default values, are:
+
+  - `placement = "h"`: where on the page to place the table.
+  - `alighment = "center"`: horizontal alighment of the table.
+  - `caption = ""`: a simple caption to go with the figure.
+  - `desc = ""`: short description to use in a *List of Tables*.

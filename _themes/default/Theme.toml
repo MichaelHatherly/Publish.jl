@@ -19,5 +19,5 @@ default_js = [
 template = {file = "html.mustache"}
 
 [latex]
-documentclass = "scrartcl"
+documentclass = "article"
 template = {file = "latex.mustache"}

@@ -225,7 +225,7 @@ function pdf(src, dst=nothing; keywords...)
         end
         println(io, "```")
         ast = load_markdown(io)
-        project_file = p.env["name"] * ".tex"
+        project_file = joinpath(tocroot, p.env["name"] * ".tex")
         t = p.env["publish"]["latex"]
         t["template"]["string"] = String(exec(p.tree[t["template"]["file"]][]))
         p.env["publish"]["template-engine"] = Mustache.render
@@ -233,6 +233,19 @@ function pdf(src, dst=nothing; keywords...)
             CommonMark.latex(handle, ast, p.env["publish"])
         end
         ## Build the final PDF document using tectonic.
+        #
+        # We have two options that need to be handled here. Either a
+        # bibliography file has been provided, in which case we must run
+        # `biber` manually to correctly render bibliographies. The other is the
+        # standard case, where no biblatex bibliography has been provided.
+        if haskey(t, "bibliography")
+            Tectonic.tectonic() do bin
+                run(`$bin --keep-intermediates --reruns 0 $project_file`)
+            end
+            Tectonic.Biber.biber() do bin
+                run(`$bin $(first(splitext(project_file)))`)
+            end
+        end
         Tectonic.tectonic() do path
             run(`$path $project_file`)
         end
@@ -263,8 +276,15 @@ _pdf(::Project, data::Vector{UInt8}, path::AbstractPath) = write(path, data)
 _pdf(::Project, ::Any, ::AbstractPath) = nothing
 
 function tex_link(n::CommonMark.Node)
-    ## TODO: make links work.
-    obj = deepcopy(n.t)
-    obj.destination = ""
-    return obj
+    # TODO: handle docstrings.
+    link = n.t
+    if link.destination == "#"
+        # We don't need to do any link resolving, since this is done by the TeX
+        # engine for us. Instead we just mark 'internal' links with a leading
+        # '#' character and external ones without.
+        link = deepcopy(link)
+        literal = CommonMark.slugify(isempty(link.title) ? n.first_child.literal : link.title)
+        link.destination = "#$literal"
+    end
+    return link
 end

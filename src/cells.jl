@@ -1,4 +1,4 @@
-# # Executable [Cells](# "Executable Cells")
+# # Executable Cells
 #
 # This file defines a custom CommonMark node type that provides executable code
 # cells.
@@ -8,9 +8,13 @@ A CommonMark rule used to define the "cell" parser. A `CellRule` holds a
 `.cache` of the `Module`s that have been defined in a markdown document so that
 cells can depend on definitions and values from previous cells.
 """
-Base.@kwdef struct CellRule
-    cache::Dict{String,Module} = Dict()
-    imports::Vector{Module} = []
+struct CellRule
+    cache::Dict{String,Module}
+    imports::Vector{Module}
+
+    function CellRule(; cache = Dict{String,Module}(), imports = Module[])
+        return new(cache, vcat(imports, Objects))
+    end
 end
 
 struct Embedded <: CommonMark.AbstractBlock end
@@ -44,7 +48,7 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
         # representation and include the resulting AST in it's place.
         # Otherwise we just capture it's value and output for display later as
         # a normal cell.
-        if showable(MIME("text/markdown"), captured.value)
+        if  get(node.meta, "markdown", "true") == "true" && showable(MIME("text/markdown"), captured.value)
             text = Base.invokelatest(() -> sprint(show, MIME("text/markdown"), captured.value))
             subparser = init_markdown_parser()
             ast = subparser(text)
@@ -52,8 +56,12 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
             CommonMark.insert_after(node, ast)
             CommonMark.unlink(node)
         else
-            cell = Cell(node, captured.value, captured.output)
-            CommonMark.insert_after(node, CommonMark.Node(cell))
+            cell = CommonMark.Node(Cell(node, captured.value, captured.output))
+            CommonMark.insert_after(node, cell)
+            if get(node.meta, "display", "true") == "false"
+                cell.meta = node.meta
+                CommonMark.unlink(node)
+            end
         end
     end
     return nothing
@@ -189,13 +197,7 @@ const IMAGE_MIMES = Union{
 }
 
 function limitedshow(io::IO, fn, mime::IMAGE_MIMES, result)
-    ext(::MIME"application/pdf") = ".pdf"
-    ext(::MIME"image/gif") = ".gif"
-    ext(::MIME"image/jpeg") = ".jpeg"
-    ext(::MIME"image/png") = ".png"
-    ext(::MIME"image/svg+xml") = ".svg"
-    ext(::MIME"text/tikz") = ".tikz"
-    name = string(hash(result), ext(mime))
+    name = string(hash(result), _ext(mime))
     open(name, "w") do handle
         Base.invokelatest(show, handle, mime, result)
     end
@@ -203,6 +205,13 @@ function limitedshow(io::IO, fn, mime::IMAGE_MIMES, result)
     node.t.destination = name
     return cm_wrapper(fn)(io, node)
 end
+
+_ext(::MIME"application/pdf") = ".pdf"
+_ext(::MIME"image/gif") = ".gif"
+_ext(::MIME"image/jpeg") = ".jpeg"
+_ext(::MIME"image/png") = ".png"
+_ext(::MIME"image/svg+xml") = ".svg"
+_ext(::MIME"text/tikz") = ".tikz"
 
 # ## CommonMark Writers
 #
@@ -238,3 +247,90 @@ end
 
 ## Markdown roundtrips, so shouldn't display cells.
 CommonMark.write_markdown(cell::Cell, w, n, ent) = nothing
+
+#
+# Custom Tables and Figures
+#
+
+module Objects
+
+export Figure, Table
+
+# TODO: implement a table version of this as well.
+Base.@kwdef struct Figure{T}
+    object::T
+    placement::Symbol = :h
+    alignment::Symbol = :center
+    maxwidth::String = "\\linewidth"
+    caption::String = ""
+    desc::String = ""
+end
+Figure(object; options...) = Figure{typeof(object)}(; object=object, options...)
+
+Base.@kwdef struct Table{T}
+    object::T
+    placement::Symbol = :h
+    alignment::Symbol = :center
+    caption::String = ""
+    desc::String = ""
+    type::Symbol = :tabular
+end
+Table(object; options...) = Table{typeof(object)}(; object=object, options...)
+
+end
+
+# TODO: implement an equivalent HTML show for this type.
+function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
+    for mime in SUPPORTED_MIMES[:latex]
+        if showable(mime, f.object)
+            filename = string(hash(f.object), _ext(mime))
+            open(filename, "w") do handle
+                Base.invokelatest(show, handle, mime, f.object)
+            end
+            println(io, "\\begin{figure}[$(f.placement)]")
+            println(io, "\\adjustimage{max width=$(f.maxwidth),$(f.alignment)}{$filename}")
+            if !isempty(f.caption)
+                desc = isempty(f.desc) ? "" : "[$(f.desc)]"
+                println(io, "\\caption$(desc){$(f.caption)}")
+            end
+            println(io, "\\end{figure}")
+            return nothing
+        end
+    end
+    throw(ErrorException("cannot display type $(typeof(f.object)) as a figure."))
+end
+
+const _LATEX_HORIZONTAL_ALIGNMENT_MAPPING = Dict(
+    :center => "\\centering",
+    :left => "\\raggedleft",
+    :right => "\\raggedright",
+)
+
+function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
+    # We only wrap tabular environments, since longtable does all this for us.
+    # It is nessecary to pass along the options to pretty_table for longtables
+    # since it handles captions and the like internally.
+    if t.type == :tabular
+        println(io, "\\begin{table}[$(t.placement)]")
+        println(io, get(_LATEX_HORIZONTAL_ALIGNMENT_MAPPING, t.alignment, "\\centering"))
+        if !isempty(t.caption)
+            desc = isempty(t.desc) ? "" : "[$(t.desc)]"
+            println(io, "\\caption$(desc){$(t.caption)}")
+        end
+        PrettyTables.pretty_table(
+            io, t.object;
+            backend=:latex,
+            wrap_table=false,
+            table_type=:tabular,
+        )
+        println(io, "\\end{table}")
+    else
+        PrettyTables.pretty_table(
+            io, t.object;
+            backend=:latex,
+            wrap_table=false,
+            table_type=:longtable,
+            title=t.caption,
+        )
+    end
+end

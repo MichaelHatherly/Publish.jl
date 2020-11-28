@@ -27,6 +27,7 @@ import LiveServer
 import Mustache
 import Pkg
 import Pkg.TOML
+import PrettyTables
 import Requires
 import Tectonic
 
