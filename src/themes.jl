@@ -12,10 +12,12 @@ Provided themes are currently:
 """
 module Themes
 
+using Pkg.Artifacts
+
 """
 The "default" theme used by this package.
 """
-const default = abspath(joinpath(@__DIR__, "..", "_themes", "default"))
+const default = artifact"publish_theme_default"
 
 end
 
