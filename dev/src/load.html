@@ -36,9 +36,33 @@
             &quot;pages&quot; =&gt; [&quot;README.md&quot;],
             &quot;toc&quot; =&gt; &quot;toc.md&quot;,
             &quot;modules&quot; =&gt; [],
+            &quot;references&quot; =&gt; [],
         ),
     )
     return rmerge(defaults, open(TOML.parse, path), globals)
+end
+
+function loadrefs(env)
+</code></pre>
+<p>Loading of references/bibliography. We can either load a <code>.bib</code> file for
+use in LaTeX/PDF output, which turns on <code>citations = biblatex</code> for
+control of how citations are printed out to LaTeX.</p>
+<p>Our other option is to print out basic citations using a JSON or TOML
+source. TODO: write conversion from JSON/TOML to BIB and back so that we
+can use either source for biblatex bibliographies.</p>
+<pre><code class="language-julia">    if haskey(env[&quot;publish&quot;], &quot;latex&quot;) &amp;&amp; haskey(env[&quot;publish&quot;][&quot;latex&quot;], &quot;bibliography&quot;)
+        env[&quot;publish&quot;][&quot;citations&quot;] = &quot;biblatex&quot;
+    else
+        refs = env[&quot;publish&quot;][&quot;references&quot;]
+        if isa(refs, String) &amp;&amp; isfile(refs)
+</code></pre>
+<p>TODO: support YAML and XML as well?</p>
+<pre><code class="language-julia">            env[&quot;publish&quot;][&quot;references&quot;] =
+                endswith(refs, &quot;.toml&quot;) ? TOML.parsefile(refs) :
+                endswith(refs, &quot;.json&quot;) ? JSON.Parser.parsefile(refs) : []
+        end
+    end
+    return env
 end
 
 rtree(f, d) = isdir(d) ? (d =&gt; [cd(()-&gt;rtree(f, x), d) for x in readdir(d) if f(x)]) : d

@@ -25,7 +25,7 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><h1 id="executable-cells-executable-cells"><a href="#executable-cells-executable-cells" class="anchor"></a>Executable <a href="../docs/cells.html#executable-cells">Cells</a></h1>
+    <main id="page"><article><h1 id="executable-cells"><a href="#executable-cells" class="anchor"></a>Executable Cells</h1>
 <p>This file defines a custom CommonMark node type that provides executable code
 cells.</p>
 <pre><code class="language-julia">&quot;&quot;&quot;
@@ -33,9 +33,13 @@ A CommonMark rule used to define the &quot;cell&quot; parser. A `CellRule` holds
 `.cache` of the `Module`s that have been defined in a markdown document so that
 cells can depend on definitions and values from previous cells.
 &quot;&quot;&quot;
-Base.@kwdef struct CellRule
-    cache::Dict{String,Module} = Dict()
-    imports::Vector{Module} = []
+struct CellRule
+    cache::Dict{String,Module}
+    imports::Vector{Module}
+
+    function CellRule(; cache = Dict{String,Module}(), imports = Module[])
+        return new(cache, vcat(imports, Objects))
+    end
 end
 
 struct Embedded &lt;: CommonMark.AbstractBlock end
@@ -71,7 +75,7 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
 representation and include the resulting AST in it’s place.
 Otherwise we just capture it’s value and output for display later as
 a normal cell.</p>
-<pre><code class="language-julia">        if showable(MIME(&quot;text/markdown&quot;), captured.value)
+<pre><code class="language-julia">        if  get(node.meta, &quot;markdown&quot;, &quot;true&quot;) == &quot;true&quot; &amp;&amp; showable(MIME(&quot;text/markdown&quot;), captured.value)
             text = Base.invokelatest(() -&gt; sprint(show, MIME(&quot;text/markdown&quot;), captured.value))
             subparser = init_markdown_parser()
             ast = subparser(text)
@@ -79,8 +83,12 @@ a normal cell.</p>
             CommonMark.insert_after(node, ast)
             CommonMark.unlink(node)
         else
-            cell = Cell(node, captured.value, captured.output)
-            CommonMark.insert_after(node, CommonMark.Node(cell))
+            cell = CommonMark.Node(Cell(node, captured.value, captured.output))
+            CommonMark.insert_after(node, cell)
+            if get(node.meta, &quot;display&quot;, &quot;true&quot;) == &quot;false&quot;
+                cell.meta = node.meta
+                CommonMark.unlink(node)
+            end
         end
     end
     return nothing
@@ -214,13 +222,7 @@ const IMAGE_MIMES = Union{
 }
 
 function limitedshow(io::IO, fn, mime::IMAGE_MIMES, result)
-    ext(::MIME&quot;application/pdf&quot;) = &quot;.pdf&quot;
-    ext(::MIME&quot;image/gif&quot;) = &quot;.gif&quot;
-    ext(::MIME&quot;image/jpeg&quot;) = &quot;.jpeg&quot;
-    ext(::MIME&quot;image/png&quot;) = &quot;.png&quot;
-    ext(::MIME&quot;image/svg+xml&quot;) = &quot;.svg&quot;
-    ext(::MIME&quot;text/tikz&quot;) = &quot;.tikz&quot;
-    name = string(hash(result), ext(mime))
+    name = string(hash(result), _ext(mime))
     open(name, &quot;w&quot;) do handle
         Base.invokelatest(show, handle, mime, result)
     end
@@ -228,6 +230,13 @@ function limitedshow(io::IO, fn, mime::IMAGE_MIMES, result)
     node.t.destination = name
     return cm_wrapper(fn)(io, node)
 end
+
+_ext(::MIME&quot;application/pdf&quot;) = &quot;.pdf&quot;
+_ext(::MIME&quot;image/gif&quot;) = &quot;.gif&quot;
+_ext(::MIME&quot;image/jpeg&quot;) = &quot;.jpeg&quot;
+_ext(::MIME&quot;image/png&quot;) = &quot;.png&quot;
+_ext(::MIME&quot;image/svg+xml&quot;) = &quot;.svg&quot;
+_ext(::MIME&quot;text/tikz&quot;) = &quot;.tikz&quot;
 </code></pre>
 <h2 id="commonmark-writers"><a href="#commonmark-writers" class="anchor"></a>CommonMark Writers</h2>
 <p>These definitions are needed by CommonMark to hook into it’s display system.</p>
@@ -260,6 +269,91 @@ end
 
 # Markdown roundtrips, so shouldn't display cells.
 CommonMark.write_markdown(cell::Cell, w, n, ent) = nothing
+</code></pre>
+<p>Custom Tables and Figures</p>
+<pre><code class="language-julia">module Objects
+
+export Figure, Table
+</code></pre>
+<p>TODO: implement a table version of this as well.</p>
+<pre><code class="language-julia">Base.@kwdef struct Figure{T}
+    object::T
+    placement::Symbol = :h
+    alignment::Symbol = :center
+    maxwidth::String = &quot;\\linewidth&quot;
+    caption::String = &quot;&quot;
+    desc::String = &quot;&quot;
+end
+Figure(object; options...) = Figure{typeof(object)}(; object=object, options...)
+
+Base.@kwdef struct Table{T}
+    object::T
+    placement::Symbol = :h
+    alignment::Symbol = :center
+    caption::String = &quot;&quot;
+    desc::String = &quot;&quot;
+    type::Symbol = :tabular
+end
+Table(object; options...) = Table{typeof(object)}(; object=object, options...)
+
+end
+</code></pre>
+<p>TODO: implement an equivalent HTML show for this type.</p>
+<pre><code class="language-julia">function Base.show(io::IO, ::MIME&quot;text/latex&quot;, f::Objects.Figure)
+    for mime in SUPPORTED_MIMES[:latex]
+        if showable(mime, f.object)
+            filename = string(hash(f.object), _ext(mime))
+            open(filename, &quot;w&quot;) do handle
+                Base.invokelatest(show, handle, mime, f.object)
+            end
+            println(io, &quot;\\begin{figure}[$(f.placement)]&quot;)
+            println(io, &quot;\\adjustimage{max width=$(f.maxwidth),$(f.alignment)}{./$filename}&quot;)
+            if !isempty(f.caption)
+                desc = isempty(f.desc) ? &quot;&quot; : &quot;[$(f.desc)]&quot;
+                println(io, &quot;\\caption$(desc){$(f.caption)}&quot;)
+            end
+            println(io, &quot;\\end{figure}&quot;)
+            return nothing
+        end
+    end
+    throw(ErrorException(&quot;cannot display type $(typeof(f.object)) as a figure.&quot;))
+end
+
+const _LATEX_HORIZONTAL_ALIGNMENT_MAPPING = Dict(
+    :center =&gt; &quot;\\centering&quot;,
+    :left =&gt; &quot;\\raggedleft&quot;,
+    :right =&gt; &quot;\\raggedright&quot;,
+)
+
+function Base.show(io::IO, ::MIME&quot;text/latex&quot;, t::Objects.Table)
+</code></pre>
+<p>We only wrap tabular environments, since longtable does all this for us.
+It is nessecary to pass along the options to pretty_table for longtables
+since it handles captions and the like internally.</p>
+<pre><code class="language-julia">    if t.type == :tabular
+        println(io, &quot;\\begin{table}[$(t.placement)]&quot;)
+        println(io, get(_LATEX_HORIZONTAL_ALIGNMENT_MAPPING, t.alignment, &quot;\\centering&quot;))
+        if !isempty(t.caption)
+            desc = isempty(t.desc) ? &quot;&quot; : &quot;[$(t.desc)]&quot;
+            println(io, &quot;\\caption$(desc){$(t.caption)}&quot;)
+        end
+        PrettyTables.pretty_table(
+            io, t.object;
+            backend=:latex,
+            wrap_table=false,
+            table_type=:tabular,
+        )
+        println(io, &quot;\\end{table}&quot;)
+    else
+        PrettyTables.pretty_table(
+            io, t.object;
+            backend=:latex,
+            wrap_table=false,
+            table_type=:longtable,
+            title=t.caption,
+        )
+    end
+end
 </code></pre>
 </article>
         <div id="page-navigation">

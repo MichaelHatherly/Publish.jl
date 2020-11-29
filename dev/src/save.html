@@ -246,11 +246,12 @@ function pdf(src, dst=nothing; keywords...)
             rpath = relpath(string(page), tocroot)
             name, _ = splitext(rpath)
             name = unix_style_path(name) # Path adjustments for Windows.
-            println(io, &quot;\\include{$name}&quot;)
+            folder = dirname(joinpath(&quot;.&quot;, name))
+            println(io, &quot;\\import{$folder/}{$(basename(name)).tex}&quot;)
         end
         println(io, &quot;```&quot;)
         ast = load_markdown(io)
-        project_file = p.env[&quot;name&quot;] * &quot;.tex&quot;
+        project_file = joinpath(tocroot, p.env[&quot;name&quot;] * &quot;.tex&quot;)
         t = p.env[&quot;publish&quot;][&quot;latex&quot;]
         t[&quot;template&quot;][&quot;string&quot;] = String(exec(p.tree[t[&quot;template&quot;][&quot;file&quot;]][]))
         p.env[&quot;publish&quot;][&quot;template-engine&quot;] = Mustache.render
@@ -258,6 +259,19 @@ function pdf(src, dst=nothing; keywords...)
             CommonMark.latex(handle, ast, p.env[&quot;publish&quot;])
         end
         # Build the final PDF document using tectonic.
+</code></pre>
+<p>We have two options that need to be handled here. Either a
+bibliography file has been provided, in which case we must run
+<code>biber</code> manually to correctly render bibliographies. The other is the
+standard case, where no biblatex bibliography has been provided.</p>
+<pre><code class="language-julia">        if haskey(t, &quot;bibliography&quot;)
+            Tectonic.tectonic() do bin
+                run(`$bin --keep-intermediates --reruns 0 $project_file`)
+            end
+            Tectonic.Biber.biber() do bin
+                run(`$bin $(first(splitext(project_file)))`)
+            end
+        end
         Tectonic.tectonic() do path
             run(`$path $project_file`)
         end
@@ -280,6 +294,8 @@ function _pdf(p::Project, node::CommonMark.Node, path::AbstractPath)
     dir, name = splitdir(dst)
     cd(isempty(dir) ? &quot;.&quot; : dir) do
         open(name, &quot;w&quot;) do io
+            path_hash = CommonMark.slugify(string(path))
+            println(io, &quot;\\hypertarget{page-$path_hash}{}&quot;)
             CommonMark.latex(io, node, pub)
         end
     end
@@ -288,10 +304,23 @@ _pdf(::Project, data::Vector{UInt8}, path::AbstractPath) = write(path, data)
 _pdf(::Project, ::Any, ::AbstractPath) = nothing
 
 function tex_link(n::CommonMark.Node)
-    # TODO: make links work.
-    obj = deepcopy(n.t)
-    obj.destination = &quot;&quot;
-    return obj
+</code></pre>
+<p>TODO: handle docstrings.</p>
+<pre><code class="language-julia">    link = n.t
+    if link.destination == &quot;#&quot;
+</code></pre>
+<p>We don’t need to do any link resolving, since this is done by the TeX
+engine for us. Instead we just mark ‘internal’ links with a leading
+‘#’ character and external ones without.</p>
+<pre><code class="language-julia">        link = deepcopy(link)
+        literal = CommonMark.slugify(isempty(link.title) ? n.first_child.literal : link.title)
+        link.destination = &quot;#$literal&quot;
+    elseif endswith(link.destination, &quot;.md&quot;)
+        path_hash = CommonMark.slugify(link.destination)
+        link = deepcopy(link)
+        link.destination = &quot;#page-$path_hash&quot;
+    end
+    return link
 end
 </code></pre>
 </article>

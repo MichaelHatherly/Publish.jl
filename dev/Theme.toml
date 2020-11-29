@@ -1,4 +1,5 @@
 theme = "default"
+version = "0.1.0"
 
 [html]
 default_css = [
@@ -19,5 +20,5 @@ default_js = [
 template = {file = "html.mustache"}
 
 [latex]
-documentclass = "scrartcl"
+documentclass = "article"
 template = {file = "latex.mustache"}

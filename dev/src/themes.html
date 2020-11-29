@@ -38,10 +38,12 @@ Provided themes are currently:
 &quot;&quot;&quot;
 module Themes
 
+using Pkg.Artifacts
+
 &quot;&quot;&quot;
 The &quot;default&quot; theme used by this package.
 &quot;&quot;&quot;
-const default = abspath(joinpath(@__DIR__, &quot;..&quot;, &quot;_themes&quot;, &quot;default&quot;))
+default() = artifact&quot;publish_theme_default&quot;
 
 end
 </code></pre>
@@ -63,7 +65,7 @@ function loadtheme(tree::FileTree, env::AbstractDict)
     file = joinpath(path(tree), theme, &quot;Theme.toml&quot;)
     if !isfile(file)
         bind = binding(theme)
-        dir = joinpath(Docs.defined(bind) ? Docs.resolve(bind) : Themes.default)
+        dir = resolve_theme(Docs.defined(bind) ? Docs.resolve(bind) : Themes.default)
         file = joinpath(dir, &quot;Theme.toml&quot;)
         isfile(file) || error(&quot;'$theme' theme does not exist.&quot;)
     end
@@ -75,6 +77,9 @@ function loadtheme(tree::FileTree, env::AbstractDict)
     end
     return merge(tree, rename(tree′, basename(tree))), env
 end
+
+resolve_theme(f::Function) = f()
+resolve_theme(s::AbstractString) = s
 </code></pre>
 </article>
         <div id="page-navigation">

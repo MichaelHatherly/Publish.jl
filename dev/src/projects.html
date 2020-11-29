@@ -46,7 +46,7 @@ Base.@kwdef mutable struct Project
 end
 Base.show(io::IO, p::Project) = print(io, &quot;$Project($(p.path))&quot;)
 </code></pre>
-<h2 id="project-constructors"><a href="#project-constructors" class="anchor"></a><a href="../docstrings/Publish.Project.html"><code>Project</code></a> Constructors</h2>
+<h2 id="project-constructors"><a href="#project-constructors" class="anchor"></a><code>Project</code> Constructors</h2>
 <pre><code class="language-julia">&quot;&quot;&quot;
     Project(mod)
 
@@ -70,6 +70,7 @@ function Project(path::AbstractPath; loaded=Dict{AbstractPath,Project}(), global
         cd(dirname(path)) do
             path = canonicalize(path)
             env = loadtoml(path, globals)
+            env = loadrefs(env)
             tree = loadtree(env, path)
             tree, env = loadtheme(tree, env)
             tree, pages = loadpages(tree, env)
