@@ -9,7 +9,6 @@
 %
 
 \usepackage{fontspec}
-\usepackage{dejavu-otf} % Wide coverage of unicode symbols.
 \usepackage{microtype}
 \usepackage{unicode-math}
 
@@ -40,14 +39,16 @@
     basicstyle=\footnotesize\ttfamily,
 }
 
-
-
 %
 % Font Features.
 %
 
-% \defaultfontfeatures{Scale=MatchLowercase}
-% \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\defaultfontfeatures{Scale=MatchLowercase}
+\defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+
+\setmainfont{DejaVuSerif}
+\setsansfont{DejaVuSans}
+\setmonofont{DejaVuSansMono}
 
 %
 % Admonition Styling.
