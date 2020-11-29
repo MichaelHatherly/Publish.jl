@@ -268,6 +268,8 @@ function _pdf(p::Project, node::CommonMark.Node, path::AbstractPath)
     dir, name = splitdir(dst)
     cd(isempty(dir) ? "." : dir) do
         open(name, "w") do io
+            path_hash = CommonMark.slugify(string(path))
+            println(io, "\\hypertarget{page-$path_hash}{}")
             CommonMark.latex(io, node, pub)
         end
     end
@@ -285,6 +287,10 @@ function tex_link(n::CommonMark.Node)
         link = deepcopy(link)
         literal = CommonMark.slugify(isempty(link.title) ? n.first_child.literal : link.title)
         link.destination = "#$literal"
+    elseif endswith(link.destination, ".md")
+        path_hash = CommonMark.slugify(link.destination)
+        link = deepcopy(link)
+        link.destination = "#page-$path_hash"
     end
     return link
 end
