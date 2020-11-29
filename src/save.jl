@@ -221,7 +221,8 @@ function pdf(src, dst=nothing; keywords...)
             rpath = relpath(string(page), tocroot)
             name, _ = splitext(rpath)
             name = unix_style_path(name) # Path adjustments for Windows.
-            println(io, "\\include{$name}")
+            folder = dirname(joinpath(".", name))
+            println(io, "\\import{$folder/}{$(basename(name)).tex}")
         end
         println(io, "```")
         ast = load_markdown(io)

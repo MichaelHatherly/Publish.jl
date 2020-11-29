@@ -17,7 +17,7 @@ using Pkg.Artifacts
 """
 The "default" theme used by this package.
 """
-const default = artifact"publish_theme_default"
+default() = artifact"publish_theme_default"
 
 end
 
@@ -40,7 +40,7 @@ function loadtheme(tree::FileTree, env::AbstractDict)
     file = joinpath(path(tree), theme, "Theme.toml")
     if !isfile(file)
         bind = binding(theme)
-        dir = joinpath(Docs.defined(bind) ? Docs.resolve(bind) : Themes.default)
+        dir = resolve_theme(Docs.defined(bind) ? Docs.resolve(bind) : Themes.default)
         file = joinpath(dir, "Theme.toml")
         isfile(file) || error("'$theme' theme does not exist.")
     end
@@ -52,3 +52,6 @@ function loadtheme(tree::FileTree, env::AbstractDict)
     end
     return merge(tree, rename(tree′, basename(tree))), env
 end
+
+resolve_theme(f::Function) = f()
+resolve_theme(s::AbstractString) = s

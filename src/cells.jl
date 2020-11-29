@@ -288,7 +288,7 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
                 Base.invokelatest(show, handle, mime, f.object)
             end
             println(io, "\\begin{figure}[$(f.placement)]")
-            println(io, "\\adjustimage{max width=$(f.maxwidth),$(f.alignment)}{$filename}")
+            println(io, "\\adjustimage{max width=$(f.maxwidth),$(f.alignment)}{./$filename}")
             if !isempty(f.caption)
                 desc = isempty(f.desc) ? "" : "[$(f.desc)]"
                 println(io, "\\caption$(desc){$(f.caption)}")
