@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Publish.jl" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="documentation" />
+    <title>Publish.jl</title>
+    <link rel="stylesheet" href="..&#x2F;normalize.css" />
+    <link rel="stylesheet" href="..&#x2F;tabulator_simple.min.css" />
+    <link rel="stylesheet" href="..&#x2F;publish.css" />
+    <link rel="stylesheet" href="..&#x2F;default.min.css" />
+    <script src="..&#x2F;versions.js"></script>
+    <script src="..&#x2F;lunr.js"></script>
+    <script src="..&#x2F;highlight.min.js"></script>
+    <script src="..&#x2F;tabulator.min.js"></script>
+    <script src="..&#x2F;julia.min.js"></script>
+    <script src="..&#x2F;julia-repl.min.js"></script>
+    <script src="..&#x2F;publish.js"></script>
+    
+</head>
+<body>
+    <div class="menu">
+        <svg id="menu-toggler" title="Contents" onclick="toggleIndexPage();" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z" fill="currentColor" /><path d="M2 12.0322C2 11.4799 2.44772 11.0322 3 11.0322H21C21.5523 11.0322 22 11.4799 22 12.0322C22 12.5845 21.5523 13.0322 21 13.0322H3C2.44772 13.0322 2 12.5845 2 12.0322Z" fill="currentColor" /><path d="M3 17.0645C2.44772 17.0645 2 17.5122 2 18.0645C2 18.6167 2.44772 19.0645 3 19.0645H21C21.5523 19.0645 22 18.6167 22 18.0645C22 17.5122 21.5523 17.0645 21 17.0645H3Z" fill="currentColor" /></svg>
+        <input id="search-input" placeholder="Search">
+        <select id="version-selector"></select>
+    </div>
+    <main id="page"><article><pre><code class="language-julia">&quot;&quot;&quot;
+    save(f, tree)
+
+Wrapper function for `FileTrees.save` to configure whether to use parallel
+saving using `FileTrees` or to just use a basic serial implementation.
+Typically the simpler serial code will be faster unless the project is very
+large.
+&quot;&quot;&quot;
+function save(f, tree)
+    if DAGGER[]
+        FileTrees.save(f, tree)
+    else
+        for file in FileTrees.files(tree)
+            dir = dirname(file)
+            isdir(dir) || mkpath(dir)
+            f(file)
+        end
+    end
+end
+</code></pre>
+<h1 id="html"><a href="#html" class="anchor"></a>HTML</h1>
+<pre><code class="language-julia">&quot;&quot;&quot;
+Convert the given `src` project to a collection of HTML files.
+&quot;&quot;&quot;
+function html(src, dst=nothing; keywords...)
+    p = Project(src; keywords...)
+    p === nothing &amp;&amp; return src
+    h = p.env[&quot;publish&quot;][&quot;html&quot;]
+    h[&quot;template&quot;][&quot;string&quot;] = String(exec(p.tree[h[&quot;template&quot;][&quot;file&quot;]][]))
+    sandbox(dst) do
+        default_html_pages(p) # TODO: handle as part of template?
+        tree = rename(p.tree, pwd())
+        mapping = page_neighbours(p.pages)
+        searchmd = p&quot;search.md&quot;
+        tree = touch(tree, searchmd; value=load_markdown(&quot;# Search\n&lt;div id='search-results'&gt;&lt;/div&gt;&quot;))
+        mapping[searchmd] = (prev=searchmd, next=searchmd)
+        save(f -&gt; _html(p, tree, f, mapping), tree)
+    end
+    return src
+end
+
+function init(p::Project, ::typeof(html); port=nothing, dir=nothing, kws...)
+    html(p, dir; kws...)
+    LiveServer.serve(; port=port, dir=dir)
+end
+
+_html(p::Project, t::FileTree, f::File, m::Dict) = _html(p, exec(f[]), relative(path(f), basename(t)), m)
+
+function _html(p::Project, node::CommonMark.Node, path::AbstractPath, mapping::Dict)
+    if haskey(mapping, path)
+        dst = with_extension(path, &quot;html&quot;)
+        # Setup.
+        let pub = p.env[&quot;publish&quot;]
+            pub[&quot;mapping&quot;] = mapping
+            pub[&quot;smartlink-engine&quot;] = (_,_,n,_)-&gt;toc_link(n, p, p.env[&quot;publish&quot;], path)
+            ast = exec(p.tree[pub[&quot;toc&quot;]][])
+            pub[&quot;html&quot;][&quot;toc&quot;] = CommonMark.html(ast, p.env[&quot;publish&quot;])
+            pub[&quot;html&quot;][&quot;prev&quot;], pub[&quot;html&quot;][&quot;next&quot;] = mapping[path]
+        end
+        # Writing.
+        relative_paths(p, path) do pub
+            pub[&quot;html&quot;][&quot;prev&quot;] = with_extension(pub[&quot;html&quot;][&quot;prev&quot;], &quot;html&quot;)
+            pub[&quot;html&quot;][&quot;next&quot;] = with_extension(pub[&quot;html&quot;][&quot;next&quot;], &quot;html&quot;)
+            dir, name = splitdir(dst)
+            cd(isempty(dir) ? &quot;.&quot; : dir) do
+                open(name, &quot;w&quot;) do io
+                    pub[&quot;template-engine&quot;] = Mustache.render
+                    pub[&quot;smartlink-engine&quot;] = (_,_,n,_)-&gt;html_link(n, p, pub, path)
+                    CommonMark.html(io, node, pub)
+                end
+            end
+        end
+        write(&quot;search.json&quot;, JSON.json(json_search_data(p)))
+        # Cleanup.
+        let pub = p.env[&quot;publish&quot;]
+            delete!(pub, &quot;mapping&quot;)
+            delete!(pub, &quot;template-engine&quot;)
+            delete!(pub, &quot;smartlink-engine&quot;)
+            delete!(pub[&quot;html&quot;], &quot;toc&quot;)
+            delete!(pub[&quot;html&quot;], &quot;prev&quot;)
+            delete!(pub[&quot;html&quot;], &quot;next&quot;)
+        end
+    end
+    return nothing
+end
+_html(::Project, data::Vector{UInt8}, path::AbstractPath, ::Dict) = write(path, data)
+_html(p::Project, t::FileTrees.Thunk, path::AbstractPath, env::Dict) = _html(p, exec(t), path, env)
+_html(::Project, ::Any, ::AbstractPath, ::Dict) = nothing
+
+function toc_link(node, project, pub, path)
+    obj = deepcopy(node.t)
+    # Change to toc location based on the current path.
+    reltoc = relpath(pub[&quot;toc&quot;], dirname(joinpath(&quot;.&quot;, string(path))))
+    # Adjust the toc link's path based on the new toc root.
+    obj.destination = joinpath(dirname(reltoc), obj.destination)
+    return html_link(obj, node, project, pub, path)
+end
+
+html_link(node, project, pub, path) = html_link(deepcopy(node.t), node, project, pub, path)
+
+function html_link(obj, node, project, pub, path)
+    if obj.destination == &quot;#&quot;
+        function docs_func!(literal::AbstractString)
+            dict = frontmatter(exec(project.tree[path][]))
+            module_binding = binding(get(dict, &quot;module&quot;, findmodule(project.env)))
+            if Docs.defined(module_binding)
+                target_binding = binding(Docs.resolve(module_binding), literal)
+                if Docs.defined(target_binding)
+                    rel = relpath(&quot;docstrings/$target_binding.html&quot;, string(dirname(path)))
+                    obj.destination = rel
+                    @goto END
+                end
+            end
+            @warn &quot;cross-reference link '$literal' on page '$path' cound not be found.&quot;
+            @label END
+            return nothing
+        end
+        function header_func!(literal::AbstractString)
+            slug = CommonMark.slugify(literal)
+            for each in project.pages, (node, enter) in exec(project.tree[each][])
+                if enter &amp;&amp; get(node.meta, &quot;id&quot;, nothing) == slug
+                    name = with_extension(relpath(each, dirname(path)), &quot;html&quot;)
+                    obj.destination = &quot;$name#$slug&quot;
+                    obj.title = &quot;&quot;
+                    @goto END
+                end
+            end
+            @warn &quot;cross-reference link '$literal' on page '$path' could not be found.&quot;
+            @label END
+            return nothing
+        end
+        # `#` is used for cross-references. The link is determined by either
+        # the provided `.title` field of the link, or the contents of the link.
+        if isempty(obj.title)
+            # No title provided so we use the contents of the link.
+            (!CommonMark.isnull(node.first_child) &amp;&amp; node.first_child.t isa CommonMark.Code) ?
+                docs_func!(node.first_child.literal) : header_func!(node.first_child.literal)
+        else
+            # The `.title` is available, so use that to determine the link.
+            m = match(r&quot;^`(.+)`$&quot;, obj.title)
+            m === nothing ? header_func!(obj.title) : docs_func!(m[1])
+        end
+    elseif startswith(obj.destination, &quot;#&quot;)
+        # Skip these kind of links, they're just page-local.
+    else
+        dst = Path(normpath(dirname(string(path)), obj.destination))
+        if haskey(pub[&quot;mapping&quot;], dst)
+            # If it's in the project's page mapping then we change the extension.
+            obj.destination = with_extension(obj.destination, &quot;html&quot;)
+        end
+    end
+    return obj
+end
+
+function default_html_pages(p::Project)
+    if !isempty(p.pages)
+        content =
+            &quot;&quot;&quot;
+            &lt;!DOCTYPE html&gt;
+            &lt;html&gt;
+            &lt;head&gt;
+            &lt;meta http-equiv = &quot;refresh&quot; content = &quot;0; url = $(with_extension(first(p.pages), &quot;html&quot;))&quot; /&gt;
+            &lt;/head&gt;
+            &lt;/html&gt;
+            &quot;&quot;&quot;
+        write(&quot;index.html&quot;, content)
+    end
+    return nothing
+end
+
+&quot;&quot;&quot;
+Extract JSON search data from a project for use in lunr.js.
+&quot;&quot;&quot;
+function json_search_data(project::Project)
+    dict = Dict{String,String}()
+    root = dirname(joinpath(&quot;.&quot;, project.env[&quot;publish&quot;][&quot;toc&quot;]))
+    for page in project.pages
+        path = relpath(string(page), root)
+        path = with_extension(path, &quot;html&quot;)
+        id = path
+        if hasfile(project.tree, page)
+            for (node, enter) in exec(project.tree[page][])
+                if enter
+                    if haskey(node.meta, &quot;id&quot;)
+                        id = &quot;$path#$(node.meta[&quot;id&quot;])&quot;
+                    end
+                    if (node.t isa CommonMark.Text || node.t isa CommonMark.Code)
+                        if haskey(dict, id)
+                            dict[id] = &quot;$(dict[id]) $(node.literal)&quot;
+                        else
+                            dict[id] = node.literal
+                        end
+                    end
+                end
+            end
+        end
+    end
+    json = Dict{String,String}[]
+    for (id, body) in dict
+        push!(json, Dict(&quot;id&quot; =&gt; id, &quot;body&quot; =&gt; body))
+    end
+    return json
+end
+</code></pre>
+<h1 id="pdf"><a href="#pdf" class="anchor"></a>PDF</h1>
+<pre><code class="language-julia">&quot;&quot;&quot;
+Convert the given `src` project to a PDF file.
+&quot;&quot;&quot;
+function pdf(src, dst=nothing; keywords...)
+    p = Project(src; keywords...)
+    p === nothing &amp;&amp; return nothing
+    sandbox(dst) do
+        tree = rename(p.tree, pwd())
+        save(f -&gt; _pdf(p, tree, f), tree)
+        tocroot = joinpath(&quot;.&quot;, dirname(p.env[&quot;publish&quot;][&quot;toc&quot;]))
+        io = IOBuffer()
+        println(io, &quot;```{=latex}&quot;)
+        for page in p.pages
+            rpath = relpath(string(page), tocroot)
+            name, _ = splitext(rpath)
+            name = unix_style_path(name) # Path adjustments for Windows.
+            folder = dirname(joinpath(&quot;.&quot;, name))
+            println(io, &quot;\\import{$folder/}{$(basename(name)).tex}&quot;)
+        end
+        println(io, &quot;```&quot;)
+        ast = load_markdown(io)
+        project_file = joinpath(tocroot, p.env[&quot;name&quot;] * &quot;.tex&quot;)
+        t = p.env[&quot;publish&quot;][&quot;latex&quot;]
+        t[&quot;template&quot;][&quot;string&quot;] = String(exec(p.tree[t[&quot;template&quot;][&quot;file&quot;]][]))
+        p.env[&quot;publish&quot;][&quot;template-engine&quot;] = Mustache.render
+        open(project_file, &quot;w&quot;) do handle
+            CommonMark.latex(handle, ast, p.env[&quot;publish&quot;])
+        end
+        # Build the final PDF document using tectonic.
+</code></pre>
+<p>We have two options that need to be handled here. Either a
+bibliography file has been provided, in which case we must run
+<code>biber</code> manually to correctly render bibliographies. The other is the
+standard case, where no biblatex bibliography has been provided.</p>
+<pre><code class="language-julia">        if haskey(t, &quot;bibliography&quot;)
+            Tectonic.tectonic() do bin
+                run(`$bin --keep-intermediates --reruns 0 $project_file`)
+            end
+            Tectonic.Biber.biber() do bin
+                run(`$bin $(first(splitext(project_file)))`)
+            end
+        end
+        Tectonic.tectonic() do path
+            run(`$path $project_file`)
+        end
+    end
+    return src
+end
+
+function init(p::Project, ::typeof(pdf); dir=nothing, kws...)
+    pdf(p, dir; kws...)
+    pdf_viewer = Sys.iswindows() ? &quot;start&quot; : Sys.isapple() ? &quot;open&quot; : &quot;xdg-open&quot;
+    run(`$pdf_viewer $(joinpath(dir, p.env[&quot;name&quot;] * &quot;.pdf&quot;))`)
+end
+
+_pdf(p::Project, t::FileTree, f::File) = _pdf(p, exec(f[]), relative(path(f), basename(t)))
+
+function _pdf(p::Project, node::CommonMark.Node, path::AbstractPath)
+    pub = p.env[&quot;publish&quot;]
+    pub[&quot;smartlink-engine&quot;] = (_, _, n, _) -&gt; tex_link(n)
+    dst = with_extension(path, &quot;tex&quot;)
+    dir, name = splitdir(dst)
+    cd(isempty(dir) ? &quot;.&quot; : dir) do
+        open(name, &quot;w&quot;) do io
+            path_hash = CommonMark.slugify(string(path))
+            println(io, &quot;\\hypertarget{page-$path_hash}{}&quot;)
+            CommonMark.latex(io, node, pub)
+        end
+    end
+end
+_pdf(::Project, data::Vector{UInt8}, path::AbstractPath) = write(path, data)
+_pdf(::Project, ::Any, ::AbstractPath) = nothing
+
+function tex_link(n::CommonMark.Node)
+</code></pre>
+<p>TODO: handle docstrings.</p>
+<pre><code class="language-julia">    link = n.t
+    if link.destination == &quot;#&quot;
+</code></pre>
+<p>We don’t need to do any link resolving, since this is done by the TeX
+engine for us. Instead we just mark ‘internal’ links with a leading
+‘#’ character and external ones without.</p>
+<pre><code class="language-julia">        link = deepcopy(link)
+        literal = CommonMark.slugify(isempty(link.title) ? n.first_child.literal : link.title)
+        link.destination = &quot;#$literal&quot;
+    elseif endswith(link.destination, &quot;.md&quot;)
+        path_hash = CommonMark.slugify(link.destination)
+        link = deepcopy(link)
+        link.destination = &quot;#page-$path_hash&quot;
+    end
+    return link
+end
+</code></pre>
+</article>
+        <div id="page-navigation">
+            <a id="previous-page" title="Previous" href="cells.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="serve.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+        </div>
+    </main>
+    <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
+<ol style="margin: 0 auto; max-width: 350px">
+<li><a href="../README.html">Introduction</a></li>
+<li><a href="../docs/getting_started.html">Getting Started</a></li>
+<li><a href="../docs/structure.html">Project Structure</a></li>
+<li><a href="../docs/references.html">Cross Referencing</a></li>
+<li><a href="../docs/config.html">Configuration</a></li>
+<li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
+<li><a href="../docs/sources.html">Source Types</a></li>
+<li><a href="../docs/cells.html">Executable “Cells”</a></li>
+<li><a href="../docs/syntax.html">Markdown Syntax</a></li>
+</ol>
+<p style="text-align: center"><strong>Examples</strong></p>
+<ul style="list-style: none; margin: 0 auto; max-width: 350px">
+<li><a href="../examples/basics.html">Basics</a></li>
+<li><a href="../examples/cells.html">Cells</a></li>
+</ul>
+<p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
+<p style="text-align: center"><strong>SOURCE</strong></p>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="../src/Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="../src/projects.html"><code>projects.jl</code></a></li>
+<li><a href="../src/themes.html"><code>themes.jl</code></a></li>
+<li><a href="../src/load.html"><code>load.jl</code></a></li>
+<li><a href="../src/cells.html"><code>cells.jl</code></a></li>
+<li><a href="../src/save.html"><code>save.jl</code></a></li>
+<li><a href="../src/serve.html"><code>serve.jl</code></a></li>
+<li><a href="../src/deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="../src/tools.html"><code>tools.jl</code></a></li>
+<li><a href="../src/utilities.html"><code>utilities.jl</code></a></li>
+</ul>
+<p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
+</nav>
+    <footer>
+        Built with <a target="_blank" href="https://github.com/MichaelHatherly/Publish.jl">Publish.jl</a> and the <a target="_blank" href="https://julialang.org">Julia Language.</a>
+    </footer>
+    <script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>

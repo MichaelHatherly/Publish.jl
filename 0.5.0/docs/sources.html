@@ -25,53 +25,45 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><h1 id="cells-in-literate-julia"><a href="#cells-in-literate-julia" class="anchor"></a>Cells in Literate Julia</h1>
-<p>The <code>{:cell}</code> syntax for <a href="../docs/cells.html#executable-cells">executable cells</a> is not limited to just
-markdown files. It will work the same across other source types as well.
-This page illustrates this using literate Julia.</p>
-<p>To use cells in a Julia file just add <code>{:cell}</code> at the end of a comment block
-before the code that you would like to be evaluated. Like so:</p>
-<pre><code element="cell" cell="##1476" class="language-julia">f(x) = x + 1
-f(1)
-</code></pre>
-<pre><code class="plaintext cell-output cell-result" class="language-plaintext">2</code></pre>
-<p>The cells behave the same across all source types and so you will need to
-provide named cells to be able to share values between cells.</p>
-<pre><code cell="example" class="language-julia">f(x::Integer) = x - 1
-length(methods(f))
-</code></pre>
-<pre><code class="plaintext cell-output cell-result" class="language-plaintext">1</code></pre>
-<p>As we can see above the function <code>f</code> only has 1 method defined since it does
-not know about the previous cell. Below we will define another cell but use
-the same name as before so that we can access it’s definitions.</p>
-<pre><code cell="example" class="language-julia">f(1)
-</code></pre>
-<pre><code class="plaintext cell-output cell-result" class="language-plaintext">0</code></pre>
-<p>When the resulting value is all that you care about when writing a cell use
-can just discard the output stream and the cell itself using a little CSS
-by adding a <code>style=&quot;display: none&quot;</code> to the cell. For example below we use
-the attributes <code>{cell=example output=false style=&quot;display: none&quot;}</code> to hide
-all but the result. The cell content below is <code>methods(f)</code>:</p>
-<pre><code output="false" style="display: none" cell="example" class="language-julia">methods(f)
-</code></pre>
-# 1 method for generic function <b>f</b>:<ul><li> f(x::<b>Integer</b>) in Main.anonymous at string:1</li> </ul><p>Finally, we can also create types that have a <code>show</code> method defined for
-<code>text/markdown</code>. This allows us to embed arbitrary generated markdown
-within a parent document.</p>
-<p><strong>This text will appear in bold.</strong></p>
-<pre><code style="display: none" cell="embedded" class="language-julia">using Markdown
-</code></pre>
-<p>Inline cells are also possible. The source that produces them will not be
-displayed though, only the resulting value. <code>stdout</code> and <code>stderr</code> will not
-show either. If the resulting value can be displayed as <code>text/markdown</code> it’s
-AST will be embedded, like above with the block cells, otherwise it will
-appear as a <code>text/plain</code> wrapped in inline code. The
-previous <code>text/plain</code> was embedded in the resulting AST using an inline cell
-that evaluted the expression <code>Markdown.md&quot;`text/plain`&quot;</code>. Values, such as
-<code element="cell" cell="##1480">3</code> or <code element="cell" cell="##1482">π = 3.1415926535897...</code>, will just display as inline code.</p>
-</article>
+    <main id="page"><article><h1 id="source-types"><a href="#source-types" class="anchor"></a>Source Types</h1>
+<p>Up until now we’ve been using markdown files for our source content — those
+ending with <code>.md</code>. <code>Publish</code> also allows using several other file types to be
+used in place of markdown files, so long as the text is formatted as markdown.</p>
+<h2 id="jupyter-notebooks"><a href="#jupyter-notebooks" class="anchor"></a>Jupyter Notebooks</h2>
+<p>Notebook files, those ending with <code>.ipynb</code>, can be imported in the same way as
+<code>.md</code> files in your <code>toc.md</code> or <code>pages = </code> configuration. They will behave in
+the exact same way.</p>
+<p>Saving your notebooks within a normal Jupyter session will be reflected in your
+<code>Publish</code> server just like it is when saving normal markdown files.</p>
+<div class="admonition info"><p class="admonition-title">Info</p>
+<p>All source code cells are treated a <code>julia</code> code blocks in the resulting
+<code>Publish</code> output.</p>
+</div>
+<h2 id="literate-julia"><a href="#literate-julia" class="anchor"></a>Literate Julia</h2>
+<p>Julia source code can also be read by <code>Publish</code>. The syntax used is a stripped
+down version of that available in <a href="https://fredrikekre.github.io/Literate.jl/">Literate.jl</a>. All the source code for this
+package is available for browsing within this document, via the <em>Source Code</em>
+section in the navigation menu. To summarise,</p>
+<ul>
+<li>lines starting with a single <code>#</code>, with any amount of leading whitespace is
+treated as a line of markdown content,</li>
+<li>lines with a double <code>##</code> are treated as a normal comment and the output
+will have one <code>#</code> stripped from it,</li>
+<li>other lines are treated as source code and not modified,</li>
+<li>none of the code blocks are executed,</li>
+<li><code>Publish</code> does not currently support Literate.jl’s filters such as <code>#md</code>,
+<code>#jl</code>, <code>#nb</code>, <code>#-</code>, or <code>#+</code>,</li>
+<li><code>#src</code> unconditional filtering is supported. Any line containing <code>#src</code>
+will be stripped from the output.</li>
+</ul>
+<div class="admonition tip"><p class="admonition-title">Tip</p>
+<p><code>Publish</code> should play nicely with <a href="https://timholy.github.io/Revise.jl/stable/">Revise.jl</a> and simply importing
+<code>Revise</code> prior to <code>Publish</code> and your own package will be enough to allow
+for Revise-style development when using <code>Publish</code>.</p>
+</div></article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="basics.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="..&#x2F;docstrings.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="themes.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="cells.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>

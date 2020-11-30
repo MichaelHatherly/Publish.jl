@@ -25,53 +25,20 @@
         <input id="search-input" placeholder="Search">
         <select id="version-selector"></select>
     </div>
-    <main id="page"><article><h1 id="cells-in-literate-julia"><a href="#cells-in-literate-julia" class="anchor"></a>Cells in Literate Julia</h1>
-<p>The <code>{:cell}</code> syntax for <a href="../docs/cells.html#executable-cells">executable cells</a> is not limited to just
-markdown files. It will work the same across other source types as well.
-This page illustrates this using literate Julia.</p>
-<p>To use cells in a Julia file just add <code>{:cell}</code> at the end of a comment block
-before the code that you would like to be evaluated. Like so:</p>
-<pre><code element="cell" cell="##1476" class="language-julia">f(x) = x + 1
-f(1)
+    <main id="page"><article><div class='docs' id='findproject'>
+<p><code>private</code> <code>findproject</code> — <code>function</code></p>
+<div class='doc' id='1'>
+<pre><code>findproject(mod)
 </code></pre>
-<pre><code class="plaintext cell-output cell-result" class="language-plaintext">2</code></pre>
-<p>The cells behave the same across all source types and so you will need to
-provide named cells to be able to share values between cells.</p>
-<pre><code cell="example" class="language-julia">f(x::Integer) = x - 1
-length(methods(f))
-</code></pre>
-<pre><code class="plaintext cell-output cell-result" class="language-plaintext">1</code></pre>
-<p>As we can see above the function <code>f</code> only has 1 method defined since it does
-not know about the previous cell. Below we will define another cell but use
-the same name as before so that we can access it’s definitions.</p>
-<pre><code cell="example" class="language-julia">f(1)
-</code></pre>
-<pre><code class="plaintext cell-output cell-result" class="language-plaintext">0</code></pre>
-<p>When the resulting value is all that you care about when writing a cell use
-can just discard the output stream and the cell itself using a little CSS
-by adding a <code>style=&quot;display: none&quot;</code> to the cell. For example below we use
-the attributes <code>{cell=example output=false style=&quot;display: none&quot;}</code> to hide
-all but the result. The cell content below is <code>methods(f)</code>:</p>
-<pre><code output="false" style="display: none" cell="example" class="language-julia">methods(f)
-</code></pre>
-# 1 method for generic function <b>f</b>:<ul><li> f(x::<b>Integer</b>) in Main.anonymous at string:1</li> </ul><p>Finally, we can also create types that have a <code>show</code> method defined for
-<code>text/markdown</code>. This allows us to embed arbitrary generated markdown
-within a parent document.</p>
-<p><strong>This text will appear in bold.</strong></p>
-<pre><code style="display: none" cell="embedded" class="language-julia">using Markdown
-</code></pre>
-<p>Inline cells are also possible. The source that produces them will not be
-displayed though, only the resulting value. <code>stdout</code> and <code>stderr</code> will not
-show either. If the resulting value can be displayed as <code>text/markdown</code> it’s
-AST will be embedded, like above with the block cells, otherwise it will
-appear as a <code>text/plain</code> wrapped in inline code. The
-previous <code>text/plain</code> was embedded in the resulting AST using an inline cell
-that evaluted the expression <code>Markdown.md&quot;`text/plain`&quot;</code>. Values, such as
-<code element="cell" cell="##1480">3</code> or <code element="cell" cell="##1482">π = 3.1415926535897...</code>, will just display as inline code.</p>
+<p>Returns the path to the configuration file for the module <code>mod</code>.</p>
+<p>When no path can be found, for example <code>Base</code> and it’s modules, then <code>nothing</code>
+is returned instead.</p>
+</div>
+</div>
 </article>
         <div id="page-navigation">
-            <a id="previous-page" title="Previous" href="basics.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
-            <a id="next-page" title="Next" href="..&#x2F;docstrings.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="previous-page" title="Previous" href="Publish.display_as.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="Publish.frontmatter.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
         </div>
     </main>
     <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
