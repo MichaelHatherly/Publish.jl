@@ -34,3 +34,13 @@ and then in your project's `Project.toml` file add a reference to this folder
 [publish]
 theme = "_my_theme_folder"
 ```
+
+## Contributing
+
+Contributions to the provided themes is encouraged. The default themes, and
+their assets, live in a separate repository called [PublishThemes][themes].
+They are hosted separately from the main Publish.jl package and are downloaded
+via Julia's artifacts system when the package is installed by users. To
+contribute please open pull requests against the PublishThemes repository.
+
+[themes]: https://github.com/MichaelHatherly/PublishThemes
