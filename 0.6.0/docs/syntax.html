@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Publish.jl" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="documentation" />
+    <title>Publish.jl</title>
+    <link rel="stylesheet" href="..&#x2F;normalize.css" />
+    <link rel="stylesheet" href="..&#x2F;tabulator_simple.min.css" />
+    <link rel="stylesheet" href="..&#x2F;publish.css" />
+    <link rel="stylesheet" href="..&#x2F;default.min.css" />
+    <script src="..&#x2F;versions.js"></script>
+    <script src="..&#x2F;lunr.js"></script>
+    <script src="..&#x2F;highlight.min.js"></script>
+    <script src="..&#x2F;tabulator.min.js"></script>
+    <script src="..&#x2F;julia.min.js"></script>
+    <script src="..&#x2F;julia-repl.min.js"></script>
+    <script src="..&#x2F;publish.js"></script>
+    
+</head>
+<body>
+    <div class="menu">
+        <svg id="menu-toggler" title="Contents" onclick="toggleIndexPage();" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z" fill="currentColor" /><path d="M2 12.0322C2 11.4799 2.44772 11.0322 3 11.0322H21C21.5523 11.0322 22 11.4799 22 12.0322C22 12.5845 21.5523 13.0322 21 13.0322H3C2.44772 13.0322 2 12.5845 2 12.0322Z" fill="currentColor" /><path d="M3 17.0645C2.44772 17.0645 2 17.5122 2 18.0645C2 18.6167 2.44772 19.0645 3 19.0645H21C21.5523 19.0645 22 18.6167 22 18.0645C22 17.5122 21.5523 17.0645 21 17.0645H3Z" fill="currentColor" /></svg>
+        <input id="search-input" placeholder="Search">
+        <select id="version-selector"></select>
+    </div>
+    <main id="page"><article><h1 id="markdown-syntax"><a href="#markdown-syntax" class="anchor"></a>Markdown Syntax</h1>
+<p>All standard <a href="https://commonmark.org/">commonmark</a> syntax is supported and provide by the
+<a href="https://www.github.com/MichaelHatherly/CommonMark.jl">CommonMark.jl</a> package. What follows on this page is a summary of the
+additional syntax extensions provided through <code>Publish</code>. Refer to the
+<em>commonmark spec</em> for details on the standard syntax. The extensions that
+<code>Publish</code> uses are documented in more detail in the <a href="https://www.github.com/MichaelHatherly/CommonMark.jl">CommonMark.jl</a>
+README.</p>
+<h2 id="admonitions"><a href="#admonitions" class="anchor"></a>Admonitions</h2>
+<p>These are specially marked blocks of markdown text that will be rendered
+differently to their surrounding text.</p>
+<pre><code class="language-plaintext">!!! &lt;word&gt; &quot;&lt;title&gt;&quot;
+
+    &lt;content&gt;
+</code></pre>
+<p>Where <code>&lt;word&gt;</code> is a required single word, <code>&lt;title&gt;</code> is an optional plain text
+title to use with the admonition, and <code>&lt;content&gt;</code> is a four-space indented
+block of markdown text. When no <code>&lt;title&gt;</code> is provided then the <code>&lt;word&gt;</code> is
+capitalised and used as the title.</p>
+<p>Special-cased <code>&lt;words&gt;</code> are <code>info</code>, <code>tip</code>, <code>warning</code>, <code>danger</code>, and <code>compat</code>
+which will be rendered in distinct colors.</p>
+<h2 id="attributes"><a href="#attributes" class="anchor"></a>Attributes</h2>
+<p>These are used to assign arbitrary key/value pairs of metadata to any other
+markdown element, such as headings, paragraphs, inline formatting, etc.</p>
+<pre><code class="language-markdown">{#id-1 .class-1 one=&quot;1&quot;}
+# Heading `code`{#id-2 .class-2 two=&quot;2&quot;}
+</code></pre>
+<p>Block-level attributes apply to the subsequent block. In this case it assigns
+the following attributes to the <code>#</code> heading.</p>
+<pre><code class="language-toml">id    = &quot;id-1&quot;
+class = &quot;class-1&quot;
+one   = &quot;1&quot;
+</code></pre>
+<p>Inline-level attributes apply to previous element. In this case it assigns the
+following attributes to the <code>`code`</code> inline code.</p>
+<pre><code class="language-toml">id    = &quot;id-2&quot;
+class = &quot;class-2&quot;
+two   = &quot;2&quot;
+</code></pre>
+<h2 id="auto-identifiers"><a href="#auto-identifiers" class="anchor"></a>Auto-Identifiers</h2>
+<p>This rule assigns page-unique <code>:id</code> attributes to all headings by stripping
+whitespace, lowercasing, and Unicode transformation. It is modelled on the
+behaviour of <a href="https://pandoc.org">Pandoc</a>’s auto identifiers.</p>
+<h2 id="citations"><a href="#citations" class="anchor"></a>Citations</h2>
+<p>Citations can be included using the <code>@citeid</code> syntax in the same way as <a href="https://pandoc.org">Pandoc</a>.</p>
+<h2 id="footnotes"><a href="#footnotes" class="anchor"></a>Footnotes</h2>
+<p>These can be added on a per-page basis. Cross-document footnotes is not supported.</p>
+<pre><code class="language-plaintext">A paragraph containing[^1] a footnote.
+
+[^1]: The footnote content.
+</code></pre>
+<p>Numbers and single word identifiers can be used as footnote names.</p>
+<h1 id="front-matter"><a href="#front-matter" class="anchor"></a>Front Matter</h1>
+<p>At the start of any markdown file you can add a fenced block of <a href="https://github.com/toml-lang/toml">TOML</a> content.</p>
+<pre><code class="language-plaintext">+++
+key = &quot;value&quot; # pairs
++++
+</code></pre>
+<p>The TOML content is placed between triple <code>+++</code> signs at the <em>very</em> start of a
+file. The TOML parser is the same that is used for parsing your <code>Project.toml</code>
+files by Pkg.jl.</p>
+<p><code>Publish</code> allows you to override some global configuration from your
+<code>[publish]</code> block in <code>Project.toml</code> within your pages’ front matter blocks on a
+per-page basis.</p>
+<h1 id="latex-maths"><a href="#latex-maths" class="anchor"></a>LaTeX Maths</h1>
+<p>Double backticks, <code>``</code>, are used to write inline LaTeX mathematics. Fenced code
+blocks with the language set to <code>math</code> are used to write display equations.</p>
+<pre><code class="language-plaintext">Inline mathematics ``x = 1``.
+
+```math
+f(x) = x
+```
+</code></pre>
+<p>You may also need to use dollar-style syntax for mathematics, such as when
+writing Jupyter notebooks that you want to include in your project. Inline
+dollar mathematics uses single <code>$</code> signs and display mathematics uses double
+<code>$$</code>.</p>
+<pre><code class="language-plaintext">Inline mathematics $x = 1$.
+
+$$f(x) = x$$
+</code></pre>
+<div class="admonition warning"><p class="admonition-title">Warning</p>
+<p>Double <code>$$</code> signs for display mathematics must be on a single line and
+cannot span multiple lines.</p>
+</div><div class="admonition tip"><p class="admonition-title">Tip</p>
+<p>You should, by default, use backtick math syntax rather than dollar signs.
+This syntax is only provided to allow for interoperation with documents
+that do not use backticks.</p>
+</div>
+<h2 id="raw-content"><a href="#raw-content" class="anchor"></a>Raw Content</h2>
+<p>These block and inline elements can be used to pass raw LaTeX or HTML through
+to the resulting output without processing it further. Similar syntax to
+the <a href="#attributes">Attributes</a> above is used.</p>
+<pre><code class="language-plaintext">Inline raw `\LaTeX`{=latex}.
+
+```{=html}
+&lt;!--a raw block of hmtl--&gt;
+```
+</code></pre>
+<div class="admonition info"><p class="admonition-title">Note</p>
+<p>Raw HTML blocks typically don’t need to be wrapped in <code>{=html}</code> since the
+commonmark parser supports raw HTML tags by default.</p>
+</div>
+<h2 id="tables"><a href="#tables" class="anchor"></a>Tables</h2>
+<p>GitHub-style pipe tables are supported with the same syntax.</p>
+<pre><code class="language-plaintext">| Column One | Column Two | Column Three |
+|:---------- | ---------- |:------------:|
+| Row `1`    | Column `2` |              |
+| *Row* 2    | **Row** 2  | Column ``|`` |
+</code></pre>
+<h2 id="fancy-typography"><a href="#fancy-typography" class="anchor"></a>Fancy Typography</h2>
+<p>The following “punctuation” replacements are made during parsing,</p>
+<ul>
+<li>double quotes (<code>&quot;</code>) are replaced with <code>“</code> and <code>”</code>,</li>
+<li>single quotes (<code>'</code>) are replaced with  <code>‘</code> and <code>’</code>,</li>
+<li>ellipses (<code>...</code>) are replace with <code>…</code>,</li>
+<li>double dashes (<code>--</code>) is replaced with <code>–</code>,</li>
+<li>and triple dashes (<code>---</code>) is replaced with <code>—</code>.</li>
+</ul>
+</article>
+        <div id="page-navigation">
+            <a id="previous-page" title="Previous" href="cells.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="..&#x2F;examples&#x2F;basics.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+        </div>
+    </main>
+    <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
+<ol style="margin: 0 auto; max-width: 350px">
+<li><a href="../README.html">Introduction</a></li>
+<li><a href="../docs/getting_started.html">Getting Started</a></li>
+<li><a href="../docs/structure.html">Project Structure</a></li>
+<li><a href="../docs/references.html">Cross Referencing</a></li>
+<li><a href="../docs/config.html">Configuration</a></li>
+<li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
+<li><a href="../docs/sources.html">Source Types</a></li>
+<li><a href="../docs/cells.html">Executable “Cells”</a></li>
+<li><a href="../docs/syntax.html">Markdown Syntax</a></li>
+</ol>
+<p style="text-align: center"><strong>Examples</strong></p>
+<ul style="list-style: none; margin: 0 auto; max-width: 350px">
+<li><a href="../examples/basics.html">Basics</a></li>
+<li><a href="../examples/cells.html">Cells</a></li>
+</ul>
+<p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
+<p style="text-align: center"><strong>SOURCE</strong></p>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="../src/Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="../src/projects.html"><code>projects.jl</code></a></li>
+<li><a href="../src/themes.html"><code>themes.jl</code></a></li>
+<li><a href="../src/load.html"><code>load.jl</code></a></li>
+<li><a href="../src/cells.html"><code>cells.jl</code></a></li>
+<li><a href="../src/save.html"><code>save.jl</code></a></li>
+<li><a href="../src/serve.html"><code>serve.jl</code></a></li>
+<li><a href="../src/deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="../src/tools.html"><code>tools.jl</code></a></li>
+<li><a href="../src/utilities.html"><code>utilities.jl</code></a></li>
+</ul>
+<p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
+</nav>
+    <footer>
+        Built with <a target="_blank" href="https://github.com/MichaelHatherly/Publish.jl">Publish.jl</a> and the <a target="_blank" href="https://julialang.org">Julia Language.</a>
+    </footer>
+    <script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Publish.jl" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="documentation" />
+    <title>Publish.jl</title>
+    <link rel="stylesheet" href="..&#x2F;normalize.css" />
+    <link rel="stylesheet" href="..&#x2F;tabulator_simple.min.css" />
+    <link rel="stylesheet" href="..&#x2F;publish.css" />
+    <link rel="stylesheet" href="..&#x2F;default.min.css" />
+    <script src="..&#x2F;versions.js"></script>
+    <script src="..&#x2F;lunr.js"></script>
+    <script src="..&#x2F;highlight.min.js"></script>
+    <script src="..&#x2F;tabulator.min.js"></script>
+    <script src="..&#x2F;julia.min.js"></script>
+    <script src="..&#x2F;julia-repl.min.js"></script>
+    <script src="..&#x2F;publish.js"></script>
+    
+</head>
+<body>
+    <div class="menu">
+        <svg id="menu-toggler" title="Contents" onclick="toggleIndexPage();" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z" fill="currentColor" /><path d="M2 12.0322C2 11.4799 2.44772 11.0322 3 11.0322H21C21.5523 11.0322 22 11.4799 22 12.0322C22 12.5845 21.5523 13.0322 21 13.0322H3C2.44772 13.0322 2 12.5845 2 12.0322Z" fill="currentColor" /><path d="M3 17.0645C2.44772 17.0645 2 17.5122 2 18.0645C2 18.6167 2.44772 19.0645 3 19.0645H21C21.5523 19.0645 22 18.6167 22 18.0645C22 17.5122 21.5523 17.0645 21 17.0645H3Z" fill="currentColor" /></svg>
+        <input id="search-input" placeholder="Search">
+        <select id="version-selector"></select>
+    </div>
+    <main id="page"><article><h1 id="executable-cells"><a href="#executable-cells" class="anchor"></a>Executable “Cells”</h1>
+<p>Not all content you’ll want to write is static. Sometimes you may want to
+generate content on the page using code. Publish handles this in a similar way
+to packages such as Documenter (and others).</p>
+<p>Julia code blocks are marked for execution using <a href="syntax.html#attributes">attribute</a>
+syntax.</p>
+<pre><code class="language-markdown">{cell=name}
+```julia
+using DataFrames
+df = DataFrame(A = 1:4, B = cumsum(1:4))
+```
+</code></pre>
+<p>The key/value attribute <code>cell=name</code> “namespaces” the cell under a unique
+<code>Module</code> called <code>name</code>. Other cells on the <em>same page</em> can use the same name to
+share the namespace. Cells are evaluated top to bottom on each page. To use a
+unique namespace you can use the shorthand syntax <code>{:cell}</code>:</p>
+<pre><code class="language-markdown">{:cell}
+```julia
+fac(n) = n &lt; 2 ? n : n * fac(n - 1)
+fac(10)
+```
+</code></pre>
+<p>All output to <code>stdout</code> and <code>stderr</code> during the evaluation of a cell is captured
+and, if any is actually produced, is displayed immediately below the cell in a
+code block. The final value, so long as it is not <code>nothing</code>, of a cell is
+displayed below this in a suitable format for the given output (<a href="../docstrings/Publish.html.html"><code>html</code></a> or
+<a href="../docstrings/Publish.pdf.html"><code>pdf</code></a>).</p>
+<pre><code class="language-markdown">{:cell}
+```julia
+@info &quot;print a message...&quot;
+```
+</code></pre>
+<p>Below is an example of the evaluation of the cell above.</p>
+<pre><code element="cell" cell="##275" class="language-julia">@info &quot;print a message...&quot;
+</code></pre>
+<pre><code class="plaintext cell-output cell-stream">[ Info: print a message...
+</code></pre>
+<h2 id="mime-types"><a href="#mime-types" class="anchor"></a><code>MIME</code> types</h2>
+<p>Many types in Julia will already have the required <code>show</code> methods defined to
+display the type as either <code>&quot;text/html&quot;</code> or <code>&quot;text/latex&quot;</code>. <code>DataFrames</code> is an
+example of this — if the result of a cell is a <code>DataFrame</code> then is will
+correctly render an HTML table or a LaTeX tabular environment in the output
+document since the package defines the needed <code>show</code> method.</p>
+<p>Some types you want to print may not come with a predefined <code>show</code> method. In
+these cases the textual representation defined by the <code>&quot;text/plain&quot;</code> <code>show</code>
+method will be used to print the result.</p>
+<div class="admonition tip"><p class="admonition-title">Tip</p>
+<p>If a package provides a type that you’d like to display from a cell then
+it’s best practise to define the <code>show</code> method within that package so that
+it “owns” the method rather than defining it yourself.</p>
+</div>
+<h2 id="markdown-mime-type"><a href="#markdown-mime-type" class="anchor"></a>Markdown <code>MIME</code> type</h2>
+<p>If a type captured in the result of a cell has a <code>show</code> method defined for the
+<code>MIME</code> type <code>text/markdown</code> then it will immediately be printed to this
+representation and then re-parsed by the markdown parser and embedded within
+the document’s AST rather as a “dumb” value. This allows, for example,
+generated internal document links to be resolved correctly.</p>
+<p>If your type has suitable <code>show</code> definition, but you do not want to display as
+the AST then pass <code>markdown=false</code> as a cell attribute to use the normal
+display procedures instead.</p>
+<h2 id="suppressing-input-output-and-results"><a href="#suppressing-input-output-and-results" class="anchor"></a>Suppressing Input, Output, and Results</h2>
+<p>You may need a cell’s results or computations, but not want to display the
+result after that cell. This can be achieved using</p>
+<ul>
+<li><code>display=false</code> to remove the cell itself from the final document,</li>
+<li><code>output=false</code> to skip showing the <code>stdout</code> and <code>stderr</code> streams below the cell,</li>
+<li><code>result=false</code> to suppress showing the resulting output value from the cell.</li>
+</ul>
+<pre><code class="language-markdown">{cell=example output=false result=false}
+```julia
+f(x) = @show x
+f(1)
+```
+</code></pre>
+<p>Below is an example of the cell above.</p>
+<pre><code output="false" cell="example" result="false" class="language-julia">f(x) = @show x
+y = f(1)
+</code></pre>
+<p>And then a cell that prints the value of <code>y</code>, but does not display it’s result.</p>
+<pre><code cell="example" result="false" class="language-julia">@show y
+</code></pre>
+<pre><code class="plaintext cell-output cell-stream">y = 1
+</code></pre>
+<h2 id="figures"><a href="#figures" class="anchor"></a>Figures</h2>
+<p>Some results may have common requirements for their display within a finished document,
+such as displaying an image within a figure environment in a PDF document. Cells provide
+a default imported type called <code>Figure</code> which can wrap any type to provide some control
+over how it will be displayed.</p>
+<div class="admonition info"><p class="admonition-title">Info</p>
+<p>Currently this is only supported for LaTeX/PDF output. HTML figure environments will
+be added later.</p>
+</div>
+<p>Figures can be created as follows:</p>
+<pre><code class="language-markdown">{cell}
+```julia
+p = plot(...)
+Figure(
+    p;
+    caption = &quot;This is the caption text.&quot;,
+)
+```
+</code></pre>
+<p>Supported keywords, along with their default values, are:</p>
+<ul>
+<li><code>placement = 'h'</code>: where on the page the figure should to be placed.</li>
+<li><code>alignment = &quot;center&quot;</code>: horizontal alignment of the figure.</li>
+<li><code>maxwidth = &quot;\\linewidth&quot;</code>: the maximum width that the image should take up.</li>
+<li><code>caption = &quot;&quot;</code>: a simple caption to go with the figure.</li>
+<li><code>desc = &quot;&quot;</code>: a short description to use in a <em>List of Figures</em>.</li>
+</ul>
+<h2 id="tables"><a href="#tables" class="anchor"></a>Tables</h2>
+<p>Similar to <code>Figure</code> discussed above, we also have a <code>Table</code> object imported by default
+into cells that can be used to format tabular data in a more presentable way. Under the
+hood it uses <code>PrettyTables.jl</code> for the formatting.</p>
+<div class="admonition info"><p class="admonition-title">Info</p>
+<p>Currently this is only supported for LaTeX/PDF output. HTML table environments will
+be added later.</p>
+</div>
+<p>Tables can be created as follows:</p>
+<pre><code class="language-markdown">{cell}
+```julia
+df = DataFrame(...) # Or any other &quot;table&quot;-like object that PrettyTables supports.
+Table(
+    df;
+    caption = &quot;This is the caption text.&quot;,
+)
+```
+</code></pre>
+<p>Supported keywords, along with their default values, are:</p>
+<ul>
+<li><code>placement = &quot;h&quot;</code>: where on the page to place the table.</li>
+<li><code>alighment = &quot;center&quot;</code>: horizontal alighment of the table.</li>
+<li><code>caption = &quot;&quot;</code>: a simple caption to go with the figure.</li>
+<li><code>desc = &quot;&quot;</code>: short description to use in a <em>List of Tables</em>.</li>
+</ul>
+</article>
+        <div id="page-navigation">
+            <a id="previous-page" title="Previous" href="sources.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="syntax.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+        </div>
+    </main>
+    <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
+<ol style="margin: 0 auto; max-width: 350px">
+<li><a href="../README.html">Introduction</a></li>
+<li><a href="../docs/getting_started.html">Getting Started</a></li>
+<li><a href="../docs/structure.html">Project Structure</a></li>
+<li><a href="../docs/references.html">Cross Referencing</a></li>
+<li><a href="../docs/config.html">Configuration</a></li>
+<li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
+<li><a href="../docs/sources.html">Source Types</a></li>
+<li><a href="../docs/cells.html">Executable “Cells”</a></li>
+<li><a href="../docs/syntax.html">Markdown Syntax</a></li>
+</ol>
+<p style="text-align: center"><strong>Examples</strong></p>
+<ul style="list-style: none; margin: 0 auto; max-width: 350px">
+<li><a href="../examples/basics.html">Basics</a></li>
+<li><a href="../examples/cells.html">Cells</a></li>
+</ul>
+<p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
+<p style="text-align: center"><strong>SOURCE</strong></p>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="../src/Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="../src/projects.html"><code>projects.jl</code></a></li>
+<li><a href="../src/themes.html"><code>themes.jl</code></a></li>
+<li><a href="../src/load.html"><code>load.jl</code></a></li>
+<li><a href="../src/cells.html"><code>cells.jl</code></a></li>
+<li><a href="../src/save.html"><code>save.jl</code></a></li>
+<li><a href="../src/serve.html"><code>serve.jl</code></a></li>
+<li><a href="../src/deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="../src/tools.html"><code>tools.jl</code></a></li>
+<li><a href="../src/utilities.html"><code>utilities.jl</code></a></li>
+</ul>
+<p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
+</nav>
+    <footer>
+        Built with <a target="_blank" href="https://github.com/MichaelHatherly/Publish.jl">Publish.jl</a> and the <a target="_blank" href="https://julialang.org">Julia Language.</a>
+    </footer>
+    <script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
