@@ -203,6 +203,113 @@ function json_search_data(project::Project)
     return json
 end
 
+# # HTML - print layout. Self-contained with all local assets inlined.
+
+function html_doc(src, dst=nothing; keywords...)
+    p = Project(src; keywords...)
+    p === nothing && return src
+    sandbox(dst) do
+        # Replace the default `html` format with `html_doc` override.
+        html = p.env["publish"]["html_doc"]
+        p.env["publish"]["html"] = html
+
+        # Read in the template.
+        html["template"]["string"] = String(exec(p.tree[html["template"]["file"]][]))
+
+        # Move the project tree into the sandboxed directory.
+        tree = rename(p.tree, pwd())
+
+        # Capture the HTML output of each page in a dict since `save` does not
+        # give a stable ordering. We'll write them in the correct order afterwards.
+        pages = Dict()
+        save(f -> _html_doc(pages, p, tree, f), tree)
+
+        # Make a mock AST to pass to the final `html` writer.
+        buf = IOBuffer()
+        for (nth, page) in enumerate(p.pages)
+            println(buf, "<div id='source-page-$nth'>", pages[page], "</div>")
+        end
+        ast = CommonMark.Node(CommonMark.HtmlBlock())
+        ast.literal = String(take!(buf))
+
+        # Data-ify all requested resources.
+        for key in ["default_js", "default_css", "js", "css"]
+            if haskey(html, key)
+                p.env["publish"]["html"][key] = [_base64resource(file) for file in html[key]]
+            end
+        end
+
+        # Setup the template renderer and write output.
+        p.env["publish"]["template-engine"] = Mustache.render
+
+        # Write the main project file.
+        tocroot = joinpath(".", dirname(p.env["publish"]["toc"]))
+        project_file = joinpath(tocroot, p.env["name"] * ".html")
+        open(project_file, "w") do handle
+            CommonMark.html(handle, ast, p.env["publish"])
+        end
+
+        # Clear up other files, we should leave the destination directory clear
+        # aside from the single `.html` project file.
+        for each in readdir(pwd())
+            each == basename(project_file) || rm(each; recursive=true)
+        end
+    end
+    return src
+end
+
+const BASE64_MIMES = Dict(
+    ".css" => "text/css",
+    ".js" => "text/javascript",
+    ".png" => "image/png",
+    ".svg" => "image/svg+xml",
+    ".jpg" => "image/jpeg",
+    ".jpeg" => "image/jpeg",
+)
+function _base64resource(file::AbstractString)
+    if isfile(file)
+        _, ext = splitext(file)
+        mime = get(BASE64_MIMES, ext, "text/plain")
+        bin = Base64.base64encode(read(file, String))
+        return "data:$mime;base64,$bin"
+    else
+        return file
+    end
+end
+
+function _html_doc(io, p::Project, tree, path, node::CommonMark.Node)
+    p.env["publish"]["smartlink-engine"] = (_, _, n, _) -> _html_doc_link(n)
+    io[path] = CommonMark.html(node, p.env["publish"])
+end
+
+_inline_image(t::CommonMark.Image) = _base64resource(t.destination)
+_inline_image(t::CommonMark.Link) = t.destination
+
+_html_doc(io, p::Project, t::FileTree, f::File) = _html_doc(io, p, t, relative(path(f), basename(t)), exec(f[]))
+_html_doc(io, p::Project, tree, path, thunk::FileTrees.Thunk) = _html_doc(io, p, tree, path, exec(thunk))
+_html_doc(io, p::Project, tree, path, data::Vector{UInt8}) = write(path, data)
+_html_doc(io, project, tree, path, other) = nothing
+
+function _html_doc_link(node::CommonMark.Node)
+    dst = node.t.destination
+    link = deepcopy(node.t)
+    if dst == "#"
+        # TODO: handle docstrings.
+        literal = if isempty(node.t.title)
+            node.first_child.literal
+        else
+            node.t.title
+        end
+        id = CommonMark.slugify(literal)
+        link.destination = "#$id"
+    elseif startswith(dst, "#")
+        # Ignore these, they already point to somewhere on this page.
+    else
+        # TODO: handle full-page links.
+    end
+    return link
+end
+
 # # PDF
 
 """

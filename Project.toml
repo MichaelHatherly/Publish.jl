@@ -4,6 +4,7 @@ authors = ["Michael Hatherly <michaelhatherly@gmail.com>"]
 version = "0.5.0"
 
 [deps]
+Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 CommonMark = "a80b9123-70ca-4bc0-993e-6e3bcb318db6"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 FilePathsBase = "48062228-2e41-5def-b9a4-89aafe57970f"

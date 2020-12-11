@@ -177,6 +177,7 @@ const SUPPORTED_MIMES = Dict{Symbol,Vector{MIME}}(
         "image/jpeg",
         "image/gif",
         "text/html",
+        "text/latex",
     ]),
     :latex => map(MIME, [
         "text/tikz", # TODO: optimal ordering.
@@ -202,9 +203,12 @@ function limitedshow(io::IO, fn, mime::IMAGE_MIMES, result)
         Base.invokelatest(show, handle, mime, result)
     end
     node = CommonMark.Node(CommonMark.Image())
-    node.t.destination = name
+    node.t.destination = _inline_image(fn, name)
     return cm_wrapper(fn)(io, node)
 end
+
+_inline_image(::typeof(CommonMark.write_html), name::AbstractString) = _base64resource(name)
+_inline_image(::Any, name) = name
 
 _ext(::MIME"application/pdf") = ".pdf"
 _ext(::MIME"image/gif") = ".gif"
@@ -300,6 +304,34 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
     throw(ErrorException("cannot display type $(typeof(f.object)) as a figure."))
 end
 
+function Base.show(io::IO, ::MIME"text/html", f::Objects.Figure)
+    for mime in SUPPORTED_MIMES[:html]
+        if showable(mime, f.object)
+            println(io, "<div class='figure-object'>")
+            if isa(mime, MIME"text/html")
+                # HTML mimes must be embedded directly into output.
+                Base.invokelatest(show, io, mime, f.object)
+            else
+                # Other types get written to file then read back in.
+                filename = string(hash(f.object), _ext(mime))
+                open(filename, "w") do handle
+                    Base.invokelatest(show, handle, mime, f.object)
+                end
+                img = CommonMark.Node(CommonMark.Image())
+                img.t.destination = _base64resource(filename)
+                img.t.title = f.caption
+                CommonMark.html(io, img)
+                if !isempty(f.caption)
+                    println(io, "<p class='caption'>Figure: $(f.caption)</p>")
+                end
+            end
+            println(io, "</div>")
+            return nothing
+        end
+    end
+    throw(ErrorException("cannot display type $(typeof(f.object)) as a figure."))
+end
+
 const _LATEX_HORIZONTAL_ALIGNMENT_MAPPING = Dict(
     :center => "\\centering",
     :left => "\\raggedleft",
@@ -333,4 +365,14 @@ function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
             title=t.caption,
         )
     end
+end
+
+function Base.show(io::IO, ::MIME"text/html", t::Objects.Table)
+    println(io, "<div class='table-object'>")
+    println(io, "<p class='caption'>Table: $(t.caption)</p>")
+    PrettyTables.pretty_table(
+        io, t.object;
+        backend=:html,
+    )
+    println(io, "</div>")
 end

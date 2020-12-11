@@ -14,10 +14,11 @@ module Publish
 
 # ## Exports
 
-export html, pdf, serve, deploy, setup
+export html, html_doc, pdf, serve, deploy, setup
 
 # ## Imports
 
+import Base64
 import CommonMark
 import DataStructures
 import IOCapture
