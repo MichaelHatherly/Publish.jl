@@ -266,6 +266,7 @@ Base.@kwdef struct Figure{T}
     placement::Symbol = :h
     alignment::Symbol = :center
     maxwidth::String = "\\linewidth"
+    landscape::Bool = false
     caption::String = ""
     desc::String = ""
 end
@@ -275,6 +276,7 @@ Base.@kwdef struct Table{T}
     object::T
     placement::Symbol = :h
     alignment::Symbol = :center
+    landscape::Bool = false
     caption::String = ""
     desc::String = ""
     type::Symbol = :tabular
@@ -291,6 +293,7 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
             open(filename, "w") do handle
                 Base.invokelatest(show, handle, mime, f.object)
             end
+            f.landscape && println(io, "\\begin{landscape}")
             println(io, "\\begin{figure}[$(f.placement)]")
             println(io, "\\adjustimage{max width=$(f.maxwidth),$(f.alignment)}{./$filename}")
             if !isempty(f.caption)
@@ -298,6 +301,7 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
                 println(io, "\\caption$(desc){$(f.caption)}")
             end
             println(io, "\\end{figure}")
+            f.landscape && println(io, "\\end{landscape}")
             return nothing
         end
     end
@@ -342,6 +346,7 @@ function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
     # We only wrap tabular environments, since longtable does all this for us.
     # It is nessecary to pass along the options to pretty_table for longtables
     # since it handles captions and the like internally.
+    t.landscape && println(io, "\\begin{landscape}")
     if t.type == :tabular
         println(io, "\\begin{table}[$(t.placement)]")
         println(io, get(_LATEX_HORIZONTAL_ALIGNMENT_MAPPING, t.alignment, "\\centering"))
@@ -365,6 +370,8 @@ function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
             title=t.caption,
         )
     end
+    t.landscape && println(io, "\\end{landscape}")
+    return nothing
 end
 
 function Base.show(io::IO, ::MIME"text/html", t::Objects.Table)

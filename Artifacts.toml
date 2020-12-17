@@ -1,6 +1,6 @@
 [publish_theme_default]
-git-tree-sha1 = "c4a004c05b3da9ee9916ef375c155f06305ef054"
+git-tree-sha1 = "66ee25018081b7378b9ed4c8d50a251788f33219"
 
     [[publish_theme_default.download]]
-    sha256 = "00381b74d503e12fa339e2059adb28f766f78d25cc532acd5c2a1b397b7fe56f"
-    url = "https://github.com/MichaelHatherly/PublishThemes/releases/download/default-0.2.0/default-0.2.0.tar.gz"
+    sha256 = "233b90dd4f4427bd1d165c3e77f49f9b9e0037b427fe8ca3a11b0f129118c97c"
+    url = "https://github.com/MichaelHatherly/PublishThemes/releases/download/default-0.2.1/default-0.2.1.tar.gz"
