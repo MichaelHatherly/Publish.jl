@@ -285,6 +285,7 @@ export Figure, Table
     placement::Symbol = :h
     alignment::Symbol = :center
     maxwidth::String = &quot;\\linewidth&quot;
+    landscape::Bool = false
     caption::String = &quot;&quot;
     desc::String = &quot;&quot;
 end
@@ -294,6 +295,7 @@ Base.@kwdef struct Table{T}
     object::T
     placement::Symbol = :h
     alignment::Symbol = :center
+    landscape::Bool = false
     caption::String = &quot;&quot;
     desc::String = &quot;&quot;
     type::Symbol = :tabular
@@ -310,6 +312,7 @@ end
             open(filename, &quot;w&quot;) do handle
                 Base.invokelatest(show, handle, mime, f.object)
             end
+            f.landscape &amp;&amp; println(io, &quot;\\begin{landscape}&quot;)
             println(io, &quot;\\begin{figure}[$(f.placement)]&quot;)
             println(io, &quot;\\adjustimage{max width=$(f.maxwidth),$(f.alignment)}{./$filename}&quot;)
             if !isempty(f.caption)
@@ -317,6 +320,7 @@ end
                 println(io, &quot;\\caption$(desc){$(f.caption)}&quot;)
             end
             println(io, &quot;\\end{figure}&quot;)
+            f.landscape &amp;&amp; println(io, &quot;\\end{landscape}&quot;)
             return nothing
         end
     end
@@ -364,7 +368,8 @@ function Base.show(io::IO, ::MIME&quot;text/latex&quot;, t::Objects.Table)
 <p>We only wrap tabular environments, since longtable does all this for us.
 It is nessecary to pass along the options to pretty_table for longtables
 since it handles captions and the like internally.</p>
-<pre><code class="language-julia">    if t.type == :tabular
+<pre><code class="language-julia">    t.landscape &amp;&amp; println(io, &quot;\\begin{landscape}&quot;)
+    if t.type == :tabular
         println(io, &quot;\\begin{table}[$(t.placement)]&quot;)
         println(io, get(_LATEX_HORIZONTAL_ALIGNMENT_MAPPING, t.alignment, &quot;\\centering&quot;))
         if !isempty(t.caption)
@@ -387,6 +392,8 @@ since it handles captions and the like internally.</p>
             title=t.caption,
         )
     end
+    t.landscape &amp;&amp; println(io, &quot;\\end{landscape}&quot;)
+    return nothing
 end
 
 function Base.show(io::IO, ::MIME&quot;text/html&quot;, t::Objects.Table)
