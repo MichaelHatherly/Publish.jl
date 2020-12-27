@@ -1,0 +1,6 @@
+name = "user_templates"
+
+Publish = "f065f642-d108-4f50-8aa5-6749150a895a"
+
+[publish.html.template]
+file = "custom.template"
