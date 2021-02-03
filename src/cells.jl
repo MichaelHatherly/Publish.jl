@@ -354,18 +354,22 @@ function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
             desc = isempty(t.desc) ? "" : "[$(t.desc)]"
             println(io, "\\caption$(desc){$(t.caption)}")
         end
+        # Manually unwrap table until upstream deps are sorted.
+        temp_io = IOBuffer()
         PrettyTables.pretty_table(
-            io, t.object;
+            temp_io, t.object;
             backend=:latex,
-            wrap_table=false,
+            # wrap_table=false,
             table_type=:tabular,
         )
+        str = String(take!(temp_io))
+        join(io, split(str, "\n")[2:end-2], "\n")
         println(io, "\\end{table}")
     else
         PrettyTables.pretty_table(
             io, t.object;
             backend=:latex,
-            wrap_table=false,
+            # wrap_table=false,
             table_type=:longtable,
             title=t.caption,
         )

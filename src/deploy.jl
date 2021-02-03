@@ -78,7 +78,7 @@ function deploy(
     kws...
 )
     startswith(root, '/') || error("'root' keyword must be an absolute path.")
-    p = Project(source)
+    p = Project(source; kws...)
     name = named ? p.env["name"] : ""
     version = versioned ? p.env["version"] : ""
     parts = filter(!isempty, [dir, name, version])
