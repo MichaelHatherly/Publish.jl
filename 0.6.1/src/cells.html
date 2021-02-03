@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Publish.jl" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="documentation" />
+    <title>Publish.jl</title>
+    <link rel="stylesheet" href="..&#x2F;normalize.css" />
+    <link rel="stylesheet" href="..&#x2F;tabulator_simple.min.css" />
+    <link rel="stylesheet" href="..&#x2F;publish.css" />
+    <link rel="stylesheet" href="..&#x2F;default.min.css" />
+    <script src="..&#x2F;versions.js"></script>
+    <script src="..&#x2F;lunr.js"></script>
+    <script src="..&#x2F;highlight.min.js"></script>
+    <script src="..&#x2F;tabulator.min.js"></script>
+    <script src="..&#x2F;julia.min.js"></script>
+    <script src="..&#x2F;julia-repl.min.js"></script>
+    <script src="..&#x2F;publish.js"></script>
+    
+</head>
+<body>
+    <div class="menu">
+        <svg id="menu-toggler" title="Contents" onclick="toggleIndexPage();" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z" fill="currentColor" /><path d="M2 12.0322C2 11.4799 2.44772 11.0322 3 11.0322H21C21.5523 11.0322 22 11.4799 22 12.0322C22 12.5845 21.5523 13.0322 21 13.0322H3C2.44772 13.0322 2 12.5845 2 12.0322Z" fill="currentColor" /><path d="M3 17.0645C2.44772 17.0645 2 17.5122 2 18.0645C2 18.6167 2.44772 19.0645 3 19.0645H21C21.5523 19.0645 22 18.6167 22 18.0645C22 17.5122 21.5523 17.0645 21 17.0645H3Z" fill="currentColor" /></svg>
+        <input id="search-input" placeholder="Search">
+        <select id="version-selector"></select>
+    </div>
+    <main id="page"><article><h1 id="executable-cells"><a href="#executable-cells" class="anchor"></a>Executable Cells</h1>
+<p>This file defines a custom CommonMark node type that provides executable code
+cells.</p>
+<pre><code class="language-julia">&quot;&quot;&quot;
+A CommonMark rule used to define the &quot;cell&quot; parser. A `CellRule` holds a
+`.cache` of the `Module`s that have been defined in a markdown document so that
+cells can depend on definitions and values from previous cells.
+&quot;&quot;&quot;
+struct CellRule
+    cache::Dict{String,Module}
+    imports::Vector{Module}
+
+    function CellRule(; cache = Dict{String,Module}(), imports = Module[])
+        return new(cache, vcat(imports, Objects))
+    end
+end
+
+struct Embedded &lt;: CommonMark.AbstractBlock end
+
+CommonMark.is_container(::Embedded) = true
+
+CommonMark.write_html(::Embedded, w, n, ent) = nothing
+CommonMark.write_latex(::Embedded, w, n, ent) = nothing
+CommonMark.write_term(::Embedded, w, n, ent) = nothing
+CommonMark.write_markdown(::Embedded, w, n, ent) = nothing
+
+&quot;&quot;&quot;
+    struct Cell
+
+A custom node type for CommonMark.jl that holds an executable &quot;cell&quot; of code.
+&quot;&quot;&quot;
+struct Cell &lt;: CommonMark.AbstractBlock
+    node::CommonMark.Node
+    value::Any
+    output::String
+end
+
+CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
+    if isjuliacode(node) &amp;&amp; iscell(node.meta)
+</code></pre>
+<p>Load the module for the current cell and evaluate the contents.</p>
+<pre><code class="language-julia">        sandbox = getmodule!(c, node)
+        captured = IOCapture.capture(rethrow=InterruptException) do
+            include_string(sandbox, node.literal)
+        end
+</code></pre>
+<p>When the value is displayable as markdown then we reparse that
+representation and include the resulting AST in it’s place.
+Otherwise we just capture it’s value and output for display later as
+a normal cell.</p>
+<pre><code class="language-julia">        if  get(node.meta, &quot;markdown&quot;, &quot;true&quot;) == &quot;true&quot; &amp;&amp; showable(MIME(&quot;text/markdown&quot;), captured.value)
+            text = Base.invokelatest(() -&gt; sprint(show, MIME(&quot;text/markdown&quot;), captured.value))
+            subparser = init_markdown_parser()
+            ast = subparser(text)
+            ast.t = Embedded()
+            CommonMark.insert_after(node, ast)
+            CommonMark.unlink(node)
+        else
+            cell = CommonMark.Node(Cell(node, captured.value, captured.output))
+            CommonMark.insert_after(node, cell)
+            if get(node.meta, &quot;display&quot;, &quot;true&quot;) == &quot;false&quot;
+                cell.meta = node.meta
+                CommonMark.unlink(node)
+            end
+        end
+    end
+    return nothing
+end
+
+struct EmbeddedInline &lt;: CommonMark.AbstractInline end
+
+CommonMark.is_container(::EmbeddedInline) = true
+
+CommonMark.write_html(::EmbeddedInline, w, n, ent) = nothing
+CommonMark.write_latex(::EmbeddedInline, w, n, ent) = nothing
+CommonMark.write_term(::EmbeddedInline, w, n, ent) = nothing
+CommonMark.write_markdown(::EmbeddedInline, w, n, ent) = nothing
+
+CommonMark.inline_modifier(c::CellRule) = CommonMark.Rule(100) do parser, block
+    for (node, ent) in block
+        if ent &amp;&amp; is_inline_code(node) &amp;&amp; iscell(node.meta)
+            sandbox = getmodule!(c, node)
+            captured = IOCapture.capture(rethrow=InterruptException) do
+                include_string(sandbox, node.literal)
+            end
+            if showable(MIME(&quot;text/markdown&quot;), captured.value)
+                text = Base.invokelatest(() -&gt; sprint(show, MIME(&quot;text/markdown&quot;), captured.value))
+                subparser = init_markdown_parser()
+                ast = subparser(text).first_child
+                ast.t = EmbeddedInline()
+                CommonMark.insert_after(node, ast)
+                CommonMark.unlink(node)
+            else
+                node.literal = Base.invokelatest(() -&gt; sprint(show, MIME(&quot;text/plain&quot;), captured.value))
+            end
+        end
+    end
+    return nothing
+end
+
+function getmodule!(rule::CellRule, node::CommonMark.Node)
+    id = get!(string ∘ gensym, node.meta, &quot;cell&quot;)
+    return get!(rule.cache, id) do
+        sandbox = Module() # TODO: named.
+        for each in rule.imports
+            name = gensym()
+            Core.eval(sandbox, :($name=$each; using .$name))
+        end
+        return sandbox
+    end
+end
+
+isjuliacode(n::CommonMark.Node) = n.t isa CommonMark.CodeBlock &amp;&amp; n.t.info == &quot;julia&quot;
+is_inline_code(n::CommonMark.Node) = n.t isa CommonMark.Code
+iscell(d::AbstractDict) = haskey(d, &quot;cell&quot;) || get(d, &quot;element&quot;, &quot;&quot;) == &quot;cell&quot;
+</code></pre>
+<h2 id="cell-evaluator"><a href="#cell-evaluator" class="anchor"></a>Cell Evaluator</h2>
+<pre><code class="language-julia">&quot;&quot;&quot;
+    display_as(default, cell, writer, [mimes...])
+
+Given a `cell` this function evaluates it and prints the output to `writer`
+using the first available `MIME` from `mimes`. Uses the `default` printer
+function to print any code blocks that are required in the output.
+&quot;&quot;&quot;
+function display_as(default, cell, w, mimes)
+    # Display options for cell:
+    show_output = get(cell.node.meta, &quot;output&quot;, &quot;true&quot;)
+    show_result = get(cell.node.meta, &quot;result&quot;, &quot;true&quot;)
+    # Evaluate the cell contents in a sandboxed module, possibly reusing one
+    # from an earlier cell if the names match.
+    if !isempty(cell.output) &amp;&amp; show_output == &quot;true&quot;
+        # There's been some output to the stream, put that in
+        # a verbatim block before the real output so long as
+        # `output=false` was not set for the cell.
+        out = CommonMark.Node(CommonMark.CodeBlock())
+        out.meta[&quot;class&quot;] = [&quot;plaintext&quot;, &quot;cell-output&quot;, &quot;cell-stream&quot;]
+        out.literal = cell.output
+        default(out.t, w, out, true)
+    end
+    show_result == &quot;true&quot; || return nothing # Display result unless `result=false` was set.
+    cell.value === nothing &amp;&amp; return nothing # Skip `nothing` results.
+    for mime in mimes
+        if showable(mime, cell.value)
+            # We've found a suitable mimetype, display as that.
+            limitedshow(w.buffer, default, mime, cell.value)
+            return nothing
+        end
+    end
+    # Default output displays the result as in the REPL.
+    code = CommonMark.Node(CommonMark.CodeBlock())
+    code.t.info = &quot;plaintext&quot;
+    code.meta[&quot;class&quot;] = [&quot;plaintext&quot;, &quot;cell-output&quot;, &quot;cell-result&quot;]
+    code.literal = limitedshow(default, MIME(&quot;text/plain&quot;), cell.value)
+    default(code.t, w, code, true)
+    return nothing
+end
+
+&quot;&quot;&quot;
+    limitedshow([io], mime, result)
+
+Prints out a &quot;limited&quot; representation of `result` in the given `mime` to the
+provided `io` stream, or returns a `String` of the output when no `io` is
+given.
+&quot;&quot;&quot;
+function limitedshow end
+
+limitedshow(io::IO, default, m, r) = Base.invokelatest(show, IOContext(io, :limit=&gt;true), m, r)
+limitedshow(default, m, r) = sprint(limitedshow, default, m, r)
+</code></pre>
+<h2 id="supported-image-mimes"><a href="#supported-image-mimes" class="anchor"></a>Supported image MIMES.</h2>
+<pre><code class="language-julia">const SUPPORTED_MIMES = Dict{Symbol,Vector{MIME}}(
+    :html  =&gt; map(MIME, [
+        &quot;image/svg+xml&quot;, # TODO: optimal ordering.
+        &quot;image/png&quot;,
+        &quot;image/jpeg&quot;,
+        &quot;image/gif&quot;,
+        &quot;text/html&quot;,
+        &quot;text/latex&quot;,
+    ]),
+    :latex =&gt; map(MIME, [
+        &quot;text/tikz&quot;, # TODO: optimal ordering.
+        &quot;image/png&quot;,
+        &quot;application/pdf&quot;,
+        &quot;text/latex&quot;,
+    ]),
+    :term  =&gt; MIME[],
+)
+
+const IMAGE_MIMES = Union{
+    MIME&quot;application/pdf&quot;,
+    MIME&quot;image/gif&quot;,
+    MIME&quot;image/jpeg&quot;,
+    MIME&quot;image/png&quot;,
+    MIME&quot;image/svg+xml&quot;,
+    MIME&quot;text/tikz&quot;,
+}
+
+function limitedshow(io::IO, fn, mime::IMAGE_MIMES, result)
+    name = string(hash(result), _ext(mime))
+    open(name, &quot;w&quot;) do handle
+        Base.invokelatest(show, handle, mime, result)
+    end
+    node = CommonMark.Node(CommonMark.Image())
+    node.t.destination = _inline_image(fn, name)
+    return cm_wrapper(fn)(io, node)
+end
+
+_inline_image(::typeof(CommonMark.write_html), name::AbstractString) = _base64resource(name)
+_inline_image(::Any, name) = name
+
+_ext(::MIME&quot;application/pdf&quot;) = &quot;.pdf&quot;
+_ext(::MIME&quot;image/gif&quot;) = &quot;.gif&quot;
+_ext(::MIME&quot;image/jpeg&quot;) = &quot;.jpeg&quot;
+_ext(::MIME&quot;image/png&quot;) = &quot;.png&quot;
+_ext(::MIME&quot;image/svg+xml&quot;) = &quot;.svg&quot;
+_ext(::MIME&quot;text/tikz&quot;) = &quot;.tikz&quot;
+</code></pre>
+<h2 id="commonmark-writers"><a href="#commonmark-writers" class="anchor"></a>CommonMark Writers</h2>
+<p>These definitions are needed by CommonMark to hook into it’s display system.</p>
+<pre><code class="language-julia">function CommonMark.write_html(cell::Cell, w, n, ent)
+    ent &amp;&amp; display_as(CommonMark.write_html, cell, w, SUPPORTED_MIMES[:html])
+    return nothing
+end
+cm_wrapper(::typeof(CommonMark.write_html)) = CommonMark.html # The wrapper function for write_html
+
+function CommonMark.write_latex(cell::Cell, w, n, ent)
+    ent &amp;&amp; display_as(CommonMark.write_latex, cell, w, SUPPORTED_MIMES[:latex])
+    return nothing
+end
+cm_wrapper(::typeof(CommonMark.write_latex)) = CommonMark.latex # The wrapper function for write_latex
+</code></pre>
+<p>The following two definitions aren’t really needed since Publish doesn’t support
+output to terminal or markdown, but are defined to ensure the display system is
+complete for the <a href="../docstrings/Publish.Cell.html"><code>Cell</code></a> node type.</p>
+<pre><code class="language-julia">function CommonMark.write_term(cell::Cell, w, n, ent)
+    if ent
+        display_as(CommonMark.write_term, cell, w, SUPPORTED_MIMES[:term])
+        # Make sure to add a linebreak afterwards if needed.
+        if !CommonMark.isnull(n.nxt)
+            CommonMark.print_margin(w)
+            CommonMark.print_literal(w, &quot;\n&quot;)
+        end
+    end
+    return nothing
+end
+
+# Markdown roundtrips, so shouldn't display cells.
+CommonMark.write_markdown(cell::Cell, w, n, ent) = nothing
+</code></pre>
+<p>Custom Tables and Figures</p>
+<pre><code class="language-julia">module Objects
+
+export Figure, Table
+</code></pre>
+<p>TODO: implement a table version of this as well.</p>
+<pre><code class="language-julia">Base.@kwdef struct Figure{T}
+    object::T
+    placement::Symbol = :h
+    alignment::Symbol = :center
+    maxwidth::String = &quot;\\linewidth&quot;
+    landscape::Bool = false
+    caption::String = &quot;&quot;
+    desc::String = &quot;&quot;
+end
+Figure(object; options...) = Figure{typeof(object)}(; object=object, options...)
+
+Base.@kwdef struct Table{T}
+    object::T
+    placement::Symbol = :h
+    alignment::Symbol = :center
+    landscape::Bool = false
+    caption::String = &quot;&quot;
+    desc::String = &quot;&quot;
+    type::Symbol = :tabular
+end
+Table(object; options...) = Table{typeof(object)}(; object=object, options...)
+
+end
+</code></pre>
+<p>TODO: implement an equivalent HTML show for this type.</p>
+<pre><code class="language-julia">function Base.show(io::IO, ::MIME&quot;text/latex&quot;, f::Objects.Figure)
+    for mime in SUPPORTED_MIMES[:latex]
+        if showable(mime, f.object)
+            filename = string(hash(f.object), _ext(mime))
+            open(filename, &quot;w&quot;) do handle
+                Base.invokelatest(show, handle, mime, f.object)
+            end
+            f.landscape &amp;&amp; println(io, &quot;\\begin{landscape}&quot;)
+            println(io, &quot;\\begin{figure}[$(f.placement)]&quot;)
+            println(io, &quot;\\adjustimage{max width=$(f.maxwidth),$(f.alignment)}{./$filename}&quot;)
+            if !isempty(f.caption)
+                desc = isempty(f.desc) ? &quot;&quot; : &quot;[$(f.desc)]&quot;
+                println(io, &quot;\\caption$(desc){$(f.caption)}&quot;)
+            end
+            println(io, &quot;\\end{figure}&quot;)
+            f.landscape &amp;&amp; println(io, &quot;\\end{landscape}&quot;)
+            return nothing
+        end
+    end
+    throw(ErrorException(&quot;cannot display type $(typeof(f.object)) as a figure.&quot;))
+end
+
+function Base.show(io::IO, ::MIME&quot;text/html&quot;, f::Objects.Figure)
+    for mime in SUPPORTED_MIMES[:html]
+        if showable(mime, f.object)
+            println(io, &quot;&lt;div class='figure-object'&gt;&quot;)
+            if isa(mime, MIME&quot;text/html&quot;)
+</code></pre>
+<p>HTML mimes must be embedded directly into output.</p>
+<pre><code class="language-julia">                Base.invokelatest(show, io, mime, f.object)
+            else
+</code></pre>
+<p>Other types get written to file then read back in.</p>
+<pre><code class="language-julia">                filename = string(hash(f.object), _ext(mime))
+                open(filename, &quot;w&quot;) do handle
+                    Base.invokelatest(show, handle, mime, f.object)
+                end
+                img = CommonMark.Node(CommonMark.Image())
+                img.t.destination = _base64resource(filename)
+                img.t.title = f.caption
+                CommonMark.html(io, img)
+                if !isempty(f.caption)
+                    println(io, &quot;&lt;p class='caption'&gt;Figure: $(f.caption)&lt;/p&gt;&quot;)
+                end
+            end
+            println(io, &quot;&lt;/div&gt;&quot;)
+            return nothing
+        end
+    end
+    throw(ErrorException(&quot;cannot display type $(typeof(f.object)) as a figure.&quot;))
+end
+
+const _LATEX_HORIZONTAL_ALIGNMENT_MAPPING = Dict(
+    :center =&gt; &quot;\\centering&quot;,
+    :left =&gt; &quot;\\raggedleft&quot;,
+    :right =&gt; &quot;\\raggedright&quot;,
+)
+
+function Base.show(io::IO, ::MIME&quot;text/latex&quot;, t::Objects.Table)
+</code></pre>
+<p>We only wrap tabular environments, since longtable does all this for us.
+It is nessecary to pass along the options to pretty_table for longtables
+since it handles captions and the like internally.</p>
+<pre><code class="language-julia">    t.landscape &amp;&amp; println(io, &quot;\\begin{landscape}&quot;)
+    if t.type == :tabular
+        println(io, &quot;\\begin{table}[$(t.placement)]&quot;)
+        println(io, get(_LATEX_HORIZONTAL_ALIGNMENT_MAPPING, t.alignment, &quot;\\centering&quot;))
+        if !isempty(t.caption)
+            desc = isempty(t.desc) ? &quot;&quot; : &quot;[$(t.desc)]&quot;
+            println(io, &quot;\\caption$(desc){$(t.caption)}&quot;)
+        end
+</code></pre>
+<p>Manually unwrap table until upstream deps are sorted.</p>
+<pre><code class="language-julia">        temp_io = IOBuffer()
+        PrettyTables.pretty_table(
+            temp_io, t.object;
+            backend=:latex,
+</code></pre>
+<p>wrap_table=false,</p>
+<pre><code class="language-julia">            table_type=:tabular,
+        )
+        str = String(take!(temp_io))
+        join(io, split(str, &quot;\n&quot;)[2:end-2], &quot;\n&quot;)
+        println(io, &quot;\\end{table}&quot;)
+    else
+        PrettyTables.pretty_table(
+            io, t.object;
+            backend=:latex,
+</code></pre>
+<p>wrap_table=false,</p>
+<pre><code class="language-julia">            table_type=:longtable,
+            title=t.caption,
+        )
+    end
+    t.landscape &amp;&amp; println(io, &quot;\\end{landscape}&quot;)
+    return nothing
+end
+
+function Base.show(io::IO, ::MIME&quot;text/html&quot;, t::Objects.Table)
+    println(io, &quot;&lt;div class='table-object'&gt;&quot;)
+    println(io, &quot;&lt;p class='caption'&gt;Table: $(t.caption)&lt;/p&gt;&quot;)
+    PrettyTables.pretty_table(
+        io, t.object;
+        backend=:html,
+    )
+    println(io, &quot;&lt;/div&gt;&quot;)
+end
+</code></pre>
+</article>
+        <div id="page-navigation">
+            <a id="previous-page" title="Previous" href="load.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="save.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+        </div>
+    </main>
+    <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
+<ol style="margin: 0 auto; max-width: 350px">
+<li><a href="../README.html">Introduction</a></li>
+<li><a href="../docs/getting_started.html">Getting Started</a></li>
+<li><a href="../docs/structure.html">Project Structure</a></li>
+<li><a href="../docs/references.html">Cross Referencing</a></li>
+<li><a href="../docs/config.html">Configuration</a></li>
+<li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
+<li><a href="../docs/sources.html">Source Types</a></li>
+<li><a href="../docs/cells.html">Executable “Cells”</a></li>
+<li><a href="../docs/syntax.html">Markdown Syntax</a></li>
+</ol>
+<p style="text-align: center"><strong>Examples</strong></p>
+<ul style="list-style: none; margin: 0 auto; max-width: 350px">
+<li><a href="../examples/basics.html">Basics</a></li>
+<li><a href="../examples/cells.html">Cells</a></li>
+</ul>
+<p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
+<p style="text-align: center"><strong>SOURCE</strong></p>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="../src/Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="../src/projects.html"><code>projects.jl</code></a></li>
+<li><a href="../src/themes.html"><code>themes.jl</code></a></li>
+<li><a href="../src/load.html"><code>load.jl</code></a></li>
+<li><a href="../src/cells.html"><code>cells.jl</code></a></li>
+<li><a href="../src/save.html"><code>save.jl</code></a></li>
+<li><a href="../src/serve.html"><code>serve.jl</code></a></li>
+<li><a href="../src/deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="../src/tools.html"><code>tools.jl</code></a></li>
+<li><a href="../src/utilities.html"><code>utilities.jl</code></a></li>
+</ul>
+<p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
+</nav>
+    <footer>
+        Built with <a target="_blank" href="https://github.com/MichaelHatherly/Publish.jl">Publish.jl</a> and the <a target="_blank" href="https://julialang.org">Julia Language.</a>
+    </footer>
+    <script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
