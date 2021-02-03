@@ -376,19 +376,26 @@ since it handles captions and the like internally.</p>
             desc = isempty(t.desc) ? &quot;&quot; : &quot;[$(t.desc)]&quot;
             println(io, &quot;\\caption$(desc){$(t.caption)}&quot;)
         end
+</code></pre>
+<p>Manually unwrap table until upstream deps are sorted.</p>
+<pre><code class="language-julia">        temp_io = IOBuffer()
         PrettyTables.pretty_table(
-            io, t.object;
+            temp_io, t.object;
             backend=:latex,
-            wrap_table=false,
-            table_type=:tabular,
+</code></pre>
+<p>wrap_table=false,</p>
+<pre><code class="language-julia">            table_type=:tabular,
         )
+        str = String(take!(temp_io))
+        join(io, split(str, &quot;\n&quot;)[2:end-2], &quot;\n&quot;)
         println(io, &quot;\\end{table}&quot;)
     else
         PrettyTables.pretty_table(
             io, t.object;
             backend=:latex,
-            wrap_table=false,
-            table_type=:longtable,
+</code></pre>
+<p>wrap_table=false,</p>
+<pre><code class="language-julia">            table_type=:longtable,
             title=t.caption,
         )
     end
