@@ -280,6 +280,7 @@ Base.@kwdef struct Table{T}
     caption::String = ""
     desc::String = ""
     type::Symbol = :tabular
+    pretty_table::NamedTuple = NamedTuple()
 end
 Table(object; options...) = Table{typeof(object)}(; object=object, options...)
 
@@ -295,7 +296,7 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
             end
             f.landscape && println(io, "\\begin{landscape}")
             println(io, "\\begin{figure}[$(f.placement)]")
-            println(io, "\\adjustimage{max width=$(f.maxwidth),$(f.alignment)}{./$filename}")
+            println(io, "\\adjustimage{max height=\\textheight,max width=$(f.maxwidth),$(f.alignment)}{./$filename}")
             if !isempty(f.caption)
                 desc = isempty(f.desc) ? "" : "[$(f.desc)]"
                 println(io, "\\caption$(desc){$(f.caption)}")
@@ -361,6 +362,7 @@ function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
             backend=:latex,
             # wrap_table=false,
             table_type=:tabular,
+            t.pretty_table... # pass through any extra options by user.
         )
         str = String(take!(temp_io))
         join(io, split(str, "\n")[2:end-2], "\n")
@@ -372,6 +374,7 @@ function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
             # wrap_table=false,
             table_type=:longtable,
             title=t.caption,
+            t.pretty_table..., # pass through any extra options by user.
         )
     end
     t.landscape && println(io, "\\end{landscape}")
