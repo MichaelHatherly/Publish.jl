@@ -309,6 +309,40 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
     throw(ErrorException("cannot display type $(typeof(f.object)) as a figure."))
 end
 
+function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure{Matrix{T}}) where T
+    objects = f.object
+    for mime in SUPPORTED_MIMES[:latex]
+        if all(object -> showable(mime, object), objects)
+            f.landscape && println(io, "\\begin{landscape}")
+            println(io, "\\begin{figure}[$(f.placement)]")
+            # Write out the objects left to right.
+            println(io, "\\begin{tabular}{$(repeat('c', size(objects, 2)))}")
+            M, N = size(objects)
+            max_height = round(1 / M; digits = 2)
+            max_width = round(1 / N; digits = 2)
+            for row in eachrow(objects)
+                for (ith, object) in enumerate(row)
+                    filename = string(hash(object), _ext(mime))
+                    open(filename, "w") do handle
+                        Base.invokelatest(show, handle, mime, object)
+                    end
+                    print(io, "\\includegraphics[max width=$(max_width)\\textwidth,max height=$(max_height)\\textheight,valign=m]{./$filename}")
+                    ith < N ? print(io, " & ") : println(io, "\\\\")
+                end
+            end
+            println(io, "\\end{tabular}")
+            if !isempty(f.caption)
+                desc = isempty(f.desc) ? "" : "[$(f.desc)]"
+                println(io, "\\caption$(desc){$(f.caption)}")
+            end
+            println(io, "\\end{figure}")
+            f.landscape && println(io, "\\end{landscape}")
+            return nothing
+        end
+    end
+    throw(ErrorException("cannot display type $(typeof(f.object)) as a figure."))
+end
+
 function Base.show(io::IO, ::MIME"text/html", f::Objects.Figure)
     for mime in SUPPORTED_MIMES[:html]
         if showable(mime, f.object)
