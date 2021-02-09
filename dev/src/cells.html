@@ -328,6 +328,41 @@ end
     throw(ErrorException(&quot;cannot display type $(typeof(f.object)) as a figure.&quot;))
 end
 
+function Base.show(io::IO, ::MIME&quot;text/latex&quot;, f::Objects.Figure{Matrix{T}}) where T
+    objects = f.object
+    for mime in SUPPORTED_MIMES[:latex]
+        if all(object -&gt; showable(mime, object), objects)
+            f.landscape &amp;&amp; println(io, &quot;\\begin{landscape}&quot;)
+            println(io, &quot;\\begin{figure}[$(f.placement)]&quot;)
+</code></pre>
+<p>Write out the objects left to right.</p>
+<pre><code class="language-julia">            println(io, &quot;\\begin{tabular}{$(repeat('c', size(objects, 2)))}&quot;)
+            M, N = size(objects)
+            max_height = round(1 / M; digits = 2)
+            max_width = round(1 / N; digits = 2)
+            for row in eachrow(objects)
+                for (ith, object) in enumerate(row)
+                    filename = string(hash(object), _ext(mime))
+                    open(filename, &quot;w&quot;) do handle
+                        Base.invokelatest(show, handle, mime, object)
+                    end
+                    print(io, &quot;\\includegraphics[max width=$(max_width)\\textwidth,max height=$(max_height)\\textheight,valign=m]{./$filename}&quot;)
+                    ith &lt; N ? print(io, &quot; &amp; &quot;) : println(io, &quot;\\\\&quot;)
+                end
+            end
+            println(io, &quot;\\end{tabular}&quot;)
+            if !isempty(f.caption)
+                desc = isempty(f.desc) ? &quot;&quot; : &quot;[$(f.desc)]&quot;
+                println(io, &quot;\\caption$(desc){$(f.caption)}&quot;)
+            end
+            println(io, &quot;\\end{figure}&quot;)
+            f.landscape &amp;&amp; println(io, &quot;\\end{landscape}&quot;)
+            return nothing
+        end
+    end
+    throw(ErrorException(&quot;cannot display type $(typeof(f.object)) as a figure.&quot;))
+end
+
 function Base.show(io::IO, ::MIME&quot;text/html&quot;, f::Objects.Figure)
     for mime in SUPPORTED_MIMES[:html]
         if showable(mime, f.object)
