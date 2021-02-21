@@ -129,7 +129,7 @@ function deploy(
     if versioned
         # Find the current versions.
         dir = joinpath(filter(!isempty, [dir, name])...)
-        versions = sort!(filter(s-&gt;!startswith(s, '.'), readdir(dir)); rev=true)
+        versions = sort!(filter(s-&gt;!startswith(s, '.') &amp;&amp; isdir(dir, s), readdir(dir)); rev=true)
         # Write a version.js file containing the list of all versions.
         io = IOBuffer()
         println(io, &quot;var PUBLISH_VERSIONS = [&quot;)
