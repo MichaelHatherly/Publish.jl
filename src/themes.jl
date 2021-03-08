@@ -45,7 +45,7 @@ function loadtheme(tree::FileTree, env::AbstractDict)
         isfile(file) || error("'$theme' theme does not exist.")
     end
     dict = TOML.parsefile(string(file))
-    env = rmerge(env, Dict("publish" => dict))
+    env = rmerge(Dict("publish" => dict), env)
     tree′ = FileTree(dirname(file))
     tree′ = FileTrees.load(tree′; lazy=LAZY[]) do file
         loadfile(env, joinpath(basename(tree′), path(file)))

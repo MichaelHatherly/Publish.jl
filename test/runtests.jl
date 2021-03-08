@@ -17,6 +17,24 @@ end
         @test html(path) == path
         @test pdf(path) == path
     end
+    @testset "User Templates" begin
+        path = joinpath(@__DIR__, "_projects/user_templates/Project.toml")
+        @test html(path) == path
+        mktempdir() do dir
+            cd(dir) do
+                @test deploy(path, "deploy"; versioned=false) == path
+                cd("deploy") do
+                    @test isfile("README.html")
+                    @test isfile("custom.template")
+                    @test isfile("search.html")
+                    @test isfile("search.json")
+                    @test isfile("index.html")
+                    @test occursin("<!--user_templates-->", read("README.html", String))
+                    @test occursin("<!--user_templates-->", read("search.html", String))
+                end
+            end
+        end
+    end
     @testset "Custom Themes" begin
         path = joinpath(@__DIR__, "_projects/theme_test/Project.toml")
         @test html(path) == path
