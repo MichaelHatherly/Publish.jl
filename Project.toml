@@ -22,7 +22,7 @@ Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 Tectonic = "9ac5f52a-99c6-489f-af81-462ef484790f"
 
 [compat]
-CommonMark = "0.7"
+CommonMark = "0.7, 0.8"
 DataStructures = "0.17, 0.18"
 FilePathsBase = "0.9"
 FileTrees = "0.1, 0.2"

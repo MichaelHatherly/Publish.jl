@@ -286,8 +286,14 @@ Table(object; options...) = Table{typeof(object)}(; object=object, options...)
 
 end
 
-# TODO: implement an equivalent HTML show for this type.
-function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
+function _format_caption(m::MIME, content::AbstractString)
+    replacer(::MIME"text/latex", s) = replace(rstrip(s), r"\\par$" => "")
+    replacer(::MIME, s) = rstrip(s)
+    p = init_markdown_parser()
+    return replacer(m, sprint(show, m, p(content)))
+end
+
+function Base.show(io::IO, m::MIME"text/latex", f::Objects.Figure)
     for mime in SUPPORTED_MIMES[:latex]
         if showable(mime, f.object)
             filename = string(hash(f.object), _ext(mime))
@@ -298,8 +304,8 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
             println(io, "\\begin{figure}[$(f.placement)]")
             println(io, "\\adjustimage{max height=\\textheight,max width=$(f.maxwidth),$(f.alignment)}{./$filename}")
             if !isempty(f.caption)
-                desc = isempty(f.desc) ? "" : "[$(f.desc)]"
-                println(io, "\\caption$(desc){$(f.caption)}")
+                desc = isempty(f.desc) ? "" : "[$(_format_caption(m, f.desc))]"
+                println(io, "\\caption$(desc){$(_format_caption(m, f.caption))}")
             end
             println(io, "\\end{figure}")
             f.landscape && println(io, "\\end{landscape}")
@@ -309,7 +315,7 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure)
     throw(ErrorException("cannot display type $(typeof(f.object)) as a figure."))
 end
 
-function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure{Matrix{T}}) where T
+function Base.show(io::IO, m::MIME"text/latex", f::Objects.Figure{Matrix{T}}) where T
     objects = f.object
     for mime in SUPPORTED_MIMES[:latex]
         if all(object -> showable(mime, object), objects)
@@ -332,8 +338,8 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure{Matrix{T}}) whe
             end
             println(io, "\\end{tabular}")
             if !isempty(f.caption)
-                desc = isempty(f.desc) ? "" : "[$(f.desc)]"
-                println(io, "\\caption$(desc){$(f.caption)}")
+                desc = isempty(f.desc) ? "" : "[$(_format_caption(m, f.desc))]"
+                println(io, "\\caption$(desc){$(_format_caption(m, f.caption))}")
             end
             println(io, "\\end{figure}")
             f.landscape && println(io, "\\end{landscape}")
@@ -343,7 +349,7 @@ function Base.show(io::IO, ::MIME"text/latex", f::Objects.Figure{Matrix{T}}) whe
     throw(ErrorException("cannot display type $(typeof(f.object)) as a figure."))
 end
 
-function Base.show(io::IO, ::MIME"text/html", f::Objects.Figure)
+function Base.show(io::IO, m::MIME"text/html", f::Objects.Figure)
     for mime in SUPPORTED_MIMES[:html]
         if showable(mime, f.object)
             println(io, "<div class='figure-object'>")
@@ -361,7 +367,8 @@ function Base.show(io::IO, ::MIME"text/html", f::Objects.Figure)
                 img.t.title = f.caption
                 CommonMark.html(io, img)
                 if !isempty(f.caption)
-                    println(io, "<p class='caption'>Figure: $(f.caption)</p>")
+                    cap = _format_caption(m, "Figure: $(f.caption)")
+                    println(io, "<div class='caption'>$(cap)</div>")
                 end
             end
             println(io, "</div>")
@@ -377,7 +384,7 @@ const _LATEX_HORIZONTAL_ALIGNMENT_MAPPING = Dict(
     :right => "\\raggedright",
 )
 
-function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
+function Base.show(io::IO, m::MIME"text/latex", t::Objects.Table)
     # We only wrap tabular environments, since longtable does all this for us.
     # It is nessecary to pass along the options to pretty_table for longtables
     # since it handles captions and the like internally.
@@ -386,8 +393,8 @@ function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
         println(io, "\\begin{table}[$(t.placement)]")
         println(io, get(_LATEX_HORIZONTAL_ALIGNMENT_MAPPING, t.alignment, "\\centering"))
         if !isempty(t.caption)
-            desc = isempty(t.desc) ? "" : "[$(t.desc)]"
-            println(io, "\\caption$(desc){$(t.caption)}")
+            desc = isempty(t.desc) ? "" : "[$(_format_caption(m, t.desc))]"
+            println(io, "\\caption$(desc){$(_format_caption(m, t.caption))}")
         end
         # Manually unwrap table until upstream deps are sorted.
         temp_io = IOBuffer()
@@ -407,7 +414,7 @@ function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
             backend=:latex,
             # wrap_table=false,
             table_type=:longtable,
-            title=t.caption,
+            title=_format_caption(m, t.caption),
             t.pretty_table..., # pass through any extra options by user.
         )
     end
@@ -415,9 +422,10 @@ function Base.show(io::IO, ::MIME"text/latex", t::Objects.Table)
     return nothing
 end
 
-function Base.show(io::IO, ::MIME"text/html", t::Objects.Table)
+function Base.show(io::IO, m::MIME"text/html", t::Objects.Table)
     println(io, "<div class='table-object'>")
-    println(io, "<p class='caption'>Table: $(t.caption)</p>")
+    cap = _format_caption(m, "Table: $(t.caption)")
+    println(io, "<div class='caption'>$(cap)</div>")
     PrettyTables.pretty_table(
         io, t.object;
         backend=:html,
