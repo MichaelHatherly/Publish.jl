@@ -1,7 +1,7 @@
 name = "Publish"
 uuid = "f065f642-d108-4f50-8aa5-6749150a895a"
 authors = ["Michael Hatherly <michaelhatherly@gmail.com>"]
-version = "0.6.4"
+version = "0.6.5"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
