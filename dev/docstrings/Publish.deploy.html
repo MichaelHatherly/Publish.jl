@@ -28,58 +28,12 @@
     <main id="page"><article><div class='docs' id='deploy'>
 <p><code>public</code> <code>deploy</code> — <code>function</code></p>
 <div class='doc' id='1'>
-<pre><code>deploy(
-    source, [dir=&quot;.&quot;], [targets...=html];
-    versioned=true,
-    named=false,
-    force=false,
-    label=nothing,
-)
+<pre><code>deploy(project::Project, out, formats...)
 </code></pre>
-<p>Build the <code>source</code> using the given <code>targets</code> list in the <code>dir</code> directory.
-<code>source</code> can be either a <code>Module</code> or a <code>String</code> representing a <code>Project.toml</code>
-path.</p>
-<p>Keyword arguments can be used to control resulting directory structure.</p>
-<ul id="keywords">
-<li>
-<p><code>versioned</code> and <code>named</code>.</p>
-<p>These keywords will place the built files in either a versioned subdirectory,
-or a named subdirectory of <code>dir</code>, or both (with name superceding version).</p>
-<p>The values for <code>name</code> and <code>version</code> are taken from those provided in the
-project’s <code>Project.toml</code> file. If these values are not specified then the
-“deployment” will fail.</p>
-</li>
-<li>
-<p><code>force</code> will remove the calculated build path prior to building
-if it already exists.</p>
-</li>
-<li>
-<p><code>label</code> specifies a temporal folder name to copy the finished build to.
-This can be used to build a “tracking” version of documentation such as a
-“dev” or “stable” that changes over time while still retaining the exact
-versioned builds.</p>
-</li>
-</ul>
-<h2 id="examples"><a href="#examples" class="anchor"></a>Examples</h2>
-<p>In the following examples our project will be the <code>Publish</code> package. This can
-be switched out for any other project source, such as a Julia package or a
-simple <code>Project.toml</code> file.</p>
-<pre><code class="language-julia">deploy(Publish, &quot;build&quot;)
-</code></pre>
-<p>writes the output to the <code>&quot;build&quot;</code> subdirectory of the current directory.
-There will be a <code>build/&lt;version&gt;</code> folder containing HTML content.</p>
-<pre><code class="language-julia">deploy(Publish, &quot;build&quot;, pdf)
-</code></pre>
-<p>does the same as above, but build the <a href="Publish.pdf.html"><code>pdf</code></a> output instead.</p>
-<pre><code class="language-julia">deploy(Publish, &quot;all-docs&quot;, pdf, html)
-</code></pre>
-<p>or build everything at once.</p>
-<p>The keyword arguments control other aspects of the build, as shown
-<a href="#keywords">above</a>. For example,</p>
-<pre><code class="language-julia">deploy(Publish, &quot;ecosystem&quot;; named=true)
-</code></pre>
-<p>would build <code>Publish</code> documentation to an <code>ecosystem/Publish/&lt;version&gt;</code>
-subdirectory.</p>
+<p>Build a Publish project from the given “virtual” <code>project</code> object.  Output is
+built in <code>out</code> directory, which is either an absolute path or relative to the
+present working directory. <code>formats</code> is the list of formats to build in <code>out</code>:
+<code>pdf</code> and <code>html</code> are supported.</p>
 </div>
 </div>
 </article>

@@ -295,6 +295,12 @@ git-tree-sha1 = "400aa43f7de43aeccc5b2e39a76a79d262202b76"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.33.3"
 
+[[TOML]]
+deps = ["Dates"]
+git-tree-sha1 = "49e65694334ca20eca818a50b2f9a55b0a20733c"
+uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+version = "1.0.2"
+
 [[TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
 git-tree-sha1 = "b1ad568ba658d8cbb3b892ed5380a6f3e781a81e"
