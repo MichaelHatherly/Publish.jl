@@ -28,9 +28,9 @@ version = "0.12.6"
 
 [[CommonMark]]
 deps = ["Crayons", "JSON", "URIs"]
-git-tree-sha1 = "1bb620c8e76625df66585bec1d85c24c9575d230"
+git-tree-sha1 = "a4cc56c625ebb801d2645f20de3bf5bc2b37bd35"
 uuid = "a80b9123-70ca-4bc0-993e-6e3bcb318db6"
-version = "0.7.3"
+version = "0.8.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
