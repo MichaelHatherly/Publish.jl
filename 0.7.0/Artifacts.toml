@@ -1,0 +1,6 @@
+[publish_theme_default]
+git-tree-sha1 = "cd7bfb8871504ba2a6cf24f507f68dc697b57331"
+
+    [[publish_theme_default.download]]
+    sha256 = "587b898ce982508a6a8acf132bae63c656d7bedc75fad8fcc7c739ac803ed34f"
+    url = "https://github.com/MichaelHatherly/PublishThemes/releases/download/default-0.2.2/default-0.2.2.tar.gz"
