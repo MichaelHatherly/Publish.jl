@@ -94,4 +94,27 @@ end
             end
         end
     end
+    @testset "Virtual Documents" begin
+        ex = Publish.Experimental
+        p = ex.Project(
+            name = "virtual_doc_test",
+            ex.Page(
+                "# Virtual Document Tests",
+                ex.Table(
+                    CellImportedModule.imported_dataframe,
+                    caption = "imported dataframe",
+                    pretty_table = (nosubheader = true,),
+                ),
+            ),
+        )
+
+        deploy(p, "vdoctest", pdf)
+        @test isdir("vdoctest")
+        isdir("vdoctest") && rm("vdoctest"; force = true, recursive = true)
+
+        deploy(p, "vdoctest", pdf; clean = true)
+        @test isdir("vdoctest")
+        @test isfile("vdoctest/virtual_doc_test.pdf")
+        isdir("vdoctest") && rm("vdoctest"; force = true, recursive = true)
+    end
 end

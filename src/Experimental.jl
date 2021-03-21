@@ -49,14 +49,20 @@ end
 Base.show(io::IO, ::Project) = print(io, "$Project(...)")
 
 """
-    deploy(project::Project, out, formats...)
+    deploy(project::Project, out, formats...; clean)
 
 Build a Publish project from the given "virtual" `project` object.  Output is
 built in `out` directory, which is either an absolute path or relative to the
 present working directory. `formats` is the list of formats to build in `out`:
 `pdf` and `html` are supported.
+
+# Keywords
+
+  - `clean = false` controls whether to only include the final document in the
+    provided `out` folder. This is only support for `formats` that are *all*
+    classified as 'standalone' (`pdf` is currently the only such format).
 """
-function Publish.deploy(p::Project, out::AbstractString, formats...)
+function Publish.deploy(p::Project, out::AbstractString, formats...; clean = false)
     out = isabspath(out) ? out : joinpath(pwd(), out)
     sandbox() do
         project = "Project.toml"
@@ -95,18 +101,36 @@ function Publish.deploy(p::Project, out::AbstractString, formats...)
         Core.eval(mod, :(export __CELLS__; __CELLS__ = $__CELLS__))
         globals = Dict("publish" => Dict("cell-imports" => [mod]))
 
+        # Curry the deploy function since we only need to vary the destination.
+        function deployer(destination::AbstractString)
+            Publish.deploy(
+                project,
+                destination,
+                formats...;
+                force = true,
+                versioned = false,
+                globals = globals,
+            )
+        end
+
         # Build and deploy the generated project.
-        Publish.deploy(
-            project,
-            out,
-            formats...;
-            force = true,
-            versioned = false,
-            globals = globals,
-        )
+        if clean && is_standalone(formats)
+            mktempdir() do dir
+                deployer(dir)
+                isdir(out) || mkpath(out)
+                file = p.config["name"] * ".pdf"
+                cp(joinpath(dir, file), joinpath(out, file); force = true)
+            end
+        else
+            deployer(out)
+        end
     end
     return out
 end
+
+is_standalone(::typeof(Publish.pdf)) = true
+is_standalone(::typeof(Publish.html)) = false
+is_standalone(tuple::Tuple) = all(is_standalone, tuple)
 
 sandbox(f) = mktempdir(dir -> cd(f, dir))
 

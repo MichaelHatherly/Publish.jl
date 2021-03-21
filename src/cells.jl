@@ -293,10 +293,16 @@ function _format_caption(m::MIME, content::AbstractString)
     return replacer(m, sprint(show, m, p(content)))
 end
 
+function _readable_unique_filename(desc::String, object)
+    hash62 = string(hash(object); base = 62)
+    return isempty(desc) ? hash62 : "$(CommonMark.slugify(desc))-$hash62"
+end
+_readable_unique_filename(f::Objects.Figure) = _readable_unique_filename(f.desc, f.object)
+
 function Base.show(io::IO, m::MIME"text/latex", f::Objects.Figure)
     for mime in SUPPORTED_MIMES[:latex]
         if showable(mime, f.object)
-            filename = string(hash(f.object), _ext(mime))
+            filename = string(_readable_unique_filename(f), _ext(mime))
             open(filename, "w") do handle
                 Base.invokelatest(show, handle, mime, f.object)
             end
@@ -326,9 +332,9 @@ function Base.show(io::IO, m::MIME"text/latex", f::Objects.Figure{Matrix{T}}) wh
             M, N = size(objects)
             max_height = round(1 / M; digits = 2)
             max_width = round(1 / N; digits = 2)
-            for row in eachrow(objects)
+            for (row_num, row) in enumerate(eachrow(objects))
                 for (ith, object) in enumerate(row)
-                    filename = string(hash(object), _ext(mime))
+                    filename = string(_readable_unique_filename(f.desc * "[$row_num,$ith]", object), _ext(mime))
                     open(filename, "w") do handle
                         Base.invokelatest(show, handle, mime, object)
                     end
@@ -358,7 +364,7 @@ function Base.show(io::IO, m::MIME"text/html", f::Objects.Figure)
                 Base.invokelatest(show, io, mime, f.object)
             else
                 # Other types get written to file then read back in.
-                filename = string(hash(f.object), _ext(mime))
+                filename = string(_readable_unique_filename(f), _ext(mime))
                 open(filename, "w") do handle
                     Base.invokelatest(show, handle, mime, f.object)
                 end
