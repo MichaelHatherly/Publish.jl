@@ -238,9 +238,9 @@ version = "1.2.1"
 
 [[PrettyTables]]
 deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
-git-tree-sha1 = "b46905b7def282b72c2a3a5b385947a01835e10a"
+git-tree-sha1 = "a7162ad93a899333717481f448a235ffafeb5eba"
 uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-version = "0.12.1"
+version = "1.0.0"
 
 [[Printf]]
 deps = ["Unicode"]
