@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Publish.jl" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="documentation" />
+    <title>Publish.jl</title>
+    <link rel="stylesheet" href="..&#x2F;normalize.css" />
+    <link rel="stylesheet" href="..&#x2F;tabulator_simple.min.css" />
+    <link rel="stylesheet" href="..&#x2F;publish.css" />
+    <link rel="stylesheet" href="..&#x2F;default.min.css" />
+    <script src="..&#x2F;versions.js"></script>
+    <script src="..&#x2F;lunr.js"></script>
+    <script src="..&#x2F;highlight.min.js"></script>
+    <script src="..&#x2F;tabulator.min.js"></script>
+    <script src="..&#x2F;julia.min.js"></script>
+    <script src="..&#x2F;julia-repl.min.js"></script>
+    <script src="..&#x2F;publish.js"></script>
+    
+</head>
+<body>
+    <div class="menu">
+        <svg id="menu-toggler" title="Contents" onclick="toggleIndexPage();" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z" fill="currentColor" /><path d="M2 12.0322C2 11.4799 2.44772 11.0322 3 11.0322H21C21.5523 11.0322 22 11.4799 22 12.0322C22 12.5845 21.5523 13.0322 21 13.0322H3C2.44772 13.0322 2 12.5845 2 12.0322Z" fill="currentColor" /><path d="M3 17.0645C2.44772 17.0645 2 17.5122 2 18.0645C2 18.6167 2.44772 19.0645 3 19.0645H21C21.5523 19.0645 22 18.6167 22 18.0645C22 17.5122 21.5523 17.0645 21 17.0645H3Z" fill="currentColor" /></svg>
+        <input id="search-input" placeholder="Search">
+        <select id="version-selector"></select>
+    </div>
+    <main id="page"><article><h1 id="project-structure"><a href="#project-structure" class="anchor"></a>Project Structure</h1>
+<p>When a project is composed of multiple pages we need to provide <code>Publish</code> with
+the order in which we would like to include them in the final document. This
+can be done in two distinct ways.</p>
+<h2 id="table-of-contents"><a href="#table-of-contents" class="anchor"></a>Table of Contents</h2>
+<p>Firstly, you can add a <code>toc.md</code> file in the same folder as your <code>Project.toml</code>
+and <code>README.md</code> files. Here “toc” stands for table-of-contents. Is provides a
+nested structure that describes your page order to <code>Publish</code>. For example</p>
+<pre><code class="language-markdown">  * [Introduction](README.md)
+  * [Details](docs/details.md)
+      * [Public Interface](docs/public.md)
+      * [Developer Docs](docs/dev.md)
+</code></pre>
+<p>In the above example we’ve included four <code>.md</code> files in our <code>toc.md</code> as well as
+more friendly titles. All links are relative to the location of your <code>toc.md</code>
+file, so keep that in mind when linking to files. The layout and formatting
+your give your table-of-contents will be reproduced in the navigation menu of
+your HTML output, similar to what you’ll see if you open the navigation menu in
+the top left of this site. For PDF output only the page inclusion <em>order</em> is
+taken into account since LaTeX provides it’s own table-of-contents formatting.</p>
+<div class="admonition tip" id="complex-layouts"><p class="admonition-title">Tip</p>
+<p>It’s worth noting that your <code>toc.md</code> doesn’t need to be a simple nested
+markdown list. If your document layout should be split into two distinct
+lists, each with titles, then do that. For example</p>
+<pre><code class="language-markdown">**Documentation**
+
+  * [Introduction](README.md)
+  * [Details](docs/details.md)
+      * [Public Interface](docs/public.md)
+      * [Developer Docs](docs/dev.md)
+
+**Examples &amp; Tutorials**
+
+  * [Basics](examples/basics.ipynb)
+  * [Advanced](examples/advanced.jl)
+</code></pre>
+</div>
+<h2 id="pages-list"><a href="#pages-list" class="anchor"></a>Pages List</h2>
+<p>The other option for specifying your document structure is to add some
+configuration to your <code>Project.toml</code>. Add a section to the end of the file like
+the example below</p>
+<pre><code class="language-toml">[publish]
+pages = [&quot;README.md&quot;, &quot;docs/details.md&quot;, &quot;docs/public.md&quot;, &quot;docs/dev.md&quot;]
+</code></pre>
+<div class="admonition warning"><p class="admonition-title">Warning</p>
+<p>You’ll likely have some amount of other information in this file since it’s
+used by <a href="https://julialang.github.io/Pkg.jl">Pkg.jl</a> to manage your Julia package source code. So long as you
+include all of the <code>Publish</code>-specific configuration inside the <code>[publish]</code>
+section it won’t disturb anything else.</p>
+</div>
+<p>The <code>pages</code> key doesn’t allow you to define a nested structure or provide
+human-readable titles to each page. If you outgrow what is provided by <code>pages</code>
+then you must switch to using a <a href="#table-of-contents"><code>toc.md</code></a> instead.</p>
+<h2 id="special-pages"><a href="#special-pages" class="anchor"></a>Special Pages</h2>
+<p>There’s a couple of pages that will appear in your output but that don’t exist
+within your project’s source files. These are the generated docstring pages
+(under <code>docstrings/*.md</code>) and a docstring index page (found at <code>docstrings.md</code>).</p>
+<div class="admonition tip"><p class="admonition-title">Tip</p>
+<p>You may want to add <code>/docstrings.md</code> to your <code>toc.md</code> if you’d like people
+to be able to search through your project’s available docstrings. If you’r
+viewing this document in a browser then there should be a link to <strong>Library
+Explorer</strong> in the sidebar navigation menu.</p>
+</div></article>
+        <div id="page-navigation">
+            <a id="previous-page" title="Previous" href="getting_started.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="references.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+        </div>
+    </main>
+    <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
+<ol style="margin: 0 auto; max-width: 350px">
+<li><a href="../README.html">Introduction</a></li>
+<li><a href="../docs/getting_started.html">Getting Started</a></li>
+<li><a href="../docs/structure.html">Project Structure</a></li>
+<li><a href="../docs/references.html">Cross Referencing</a></li>
+<li><a href="../docs/config.html">Configuration</a></li>
+<li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
+<li><a href="../docs/sources.html">Source Types</a></li>
+<li><a href="../docs/cells.html">Executable “Cells”</a></li>
+<li><a href="../docs/syntax.html">Markdown Syntax</a></li>
+</ol>
+<p style="text-align: center"><strong>Examples</strong></p>
+<ul style="list-style: none; margin: 0 auto; max-width: 350px">
+<li><a href="../examples/basics.html">Basics</a></li>
+<li><a href="../examples/cells.html">Cells</a></li>
+</ul>
+<p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
+<p style="text-align: center"><strong>SOURCE</strong></p>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="../src/Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="../src/projects.html"><code>projects.jl</code></a></li>
+<li><a href="../src/themes.html"><code>themes.jl</code></a></li>
+<li><a href="../src/load.html"><code>load.jl</code></a></li>
+<li><a href="../src/cells.html"><code>cells.jl</code></a></li>
+<li><a href="../src/save.html"><code>save.jl</code></a></li>
+<li><a href="../src/serve.html"><code>serve.jl</code></a></li>
+<li><a href="../src/deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="../src/tools.html"><code>tools.jl</code></a></li>
+<li><a href="../src/utilities.html"><code>utilities.jl</code></a></li>
+</ul>
+<p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
+</nav>
+    <footer>
+        Built with <a target="_blank" href="https://github.com/MichaelHatherly/Publish.jl">Publish.jl</a> and the <a target="_blank" href="https://julialang.org">Julia Language.</a>
+    </footer>
+    <script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
