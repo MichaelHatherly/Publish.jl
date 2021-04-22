@@ -406,7 +406,7 @@ function Base.show(io::IO, m::MIME"text/latex", t::Objects.Table)
         temp_io = IOBuffer()
         PrettyTables.pretty_table(
             temp_io, t.object;
-            backend=:latex,
+            backend=Val(:latex),
             # wrap_table=false,
             table_type=:tabular,
             t.pretty_table... # pass through any extra options by user.
@@ -417,7 +417,7 @@ function Base.show(io::IO, m::MIME"text/latex", t::Objects.Table)
     else
         PrettyTables.pretty_table(
             io, t.object;
-            backend=:latex,
+            backend=Val(:latex),
             # wrap_table=false,
             table_type=:longtable,
             title=_format_caption(m, t.caption),
@@ -434,7 +434,7 @@ function Base.show(io::IO, m::MIME"text/html", t::Objects.Table)
     println(io, "<div class='caption'>$(cap)</div>")
     PrettyTables.pretty_table(
         io, t.object;
-        backend=:html,
+        backend=Val(:html),
     )
     println(io, "</div>")
 end
