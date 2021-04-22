@@ -2,6 +2,7 @@ var PUBLISH_ROOT = '/Publish.jl/0.4.0';
 var PUBLISH_VERSION = "0.4.0";
 var PUBLISH_VERSIONS = [
     ["dev","/Publish.jl/dev/index.html"],
+    ["0.8.0","/Publish.jl/0.8.0/index.html"],
     ["0.7.2","/Publish.jl/0.7.2/index.html"],
     ["0.7.1","/Publish.jl/0.7.1/index.html"],
     ["0.7.0","/Publish.jl/0.7.0/index.html"],
