@@ -1,0 +1,5 @@
+theme = "vscode"
+version = "0.1.0"
+
+[markdown]
+template = {file = "markdown.mustache"}
