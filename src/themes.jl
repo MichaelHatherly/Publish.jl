@@ -12,12 +12,13 @@ Provided themes are currently:
 """
 module Themes
 
-using Pkg.Artifacts
+using RelocatableFolders
 
 """
 The "default" theme used by this package.
 """
-default() = artifact"publish_theme_default"
+const default = @path joinpath(@__DIR__, "..", "_themes", "default")
+const vscode = @path joinpath(@__DIR__, "..", "_themes", "vscode")
 
 end
 

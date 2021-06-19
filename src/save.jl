@@ -402,3 +402,140 @@ function tex_link(n::CommonMark.Node)
     end
     return link
 end
+
+#
+# markdown
+#
+
+function json_toc(p::Project)
+    ast = exec(p.tree[p.env["publish"]["toc"]].value)
+    stack = [Dict{String,Any}("project" => TOML.parsefile(string(p.path)))]
+    for (n, e) in ast
+        children = get!(Vector{Any}, last(stack), "children")
+        if isa(n.t, CommonMark.List)
+            if e
+                child = Dict{String,Any}()
+                push!(children, child)
+                push!(stack, child)
+            else
+                pop!(stack)
+            end
+        elseif isa(n.t, CommonMark.Link) && e
+            headers = []
+            page = Dict{String,Any}("title" => CommonMark.markdown(n.first_child), "page" => n.t.destination, "headers" => headers)
+            dst = n.t.destination
+            for (n, e) in exec(p.tree[dst].value)
+                if isa(n.t, CommonMark.Heading) && e
+                    title = CommonMark.markdown(n.first_child)
+                    slug = get(() -> CommonMark.slugify(title), n.meta, "id")
+                    push!(headers, Dict{String,Any}("title" => title, "slug" => slug))
+                end
+            end
+            if dst == "docstrings.md"
+                cs = get!(Vector{Any}, page, "children")
+                for each in FileTrees.children(p.tree["docstrings/"])
+                    name, _ = splitext(each.name)
+                    title = "`$(name)`"
+                    push!(cs, Dict("title" => title, "page" => "docstrings/$(each.name)"))
+                end
+            end
+            push!(children, page)
+        end
+    end
+    return first(stack)
+end
+
+function markdown(src, dst=nothing; keywords...)
+    p = Project(src; keywords...)
+    p === nothing && return nothing
+    sandbox(dst) do
+        tree = rename(p.tree, pwd())
+        name, _ = splitext(p.env["publish"]["toc"])
+        mapping = page_neighbours(p.pages)
+        open("$name.json", "w") do io
+            json = json_toc(p)
+            JSON.Writer.print(io, json)
+        end
+        save(f -> _markdown(p, tree, f, mapping), tree)
+        t = p.env["publish"]["markdown"]
+        t["template"]["string"] = String(exec(p.tree[t["template"]["file"]][]))
+        p.env["publish"]["template-engine"] = Mustache.render
+    end
+    return src
+end
+
+init(p::Project, ::typeof(markdown); dir=nothing, kws...) = nothing
+
+_markdown(p::Project, t::FileTree, f::File, mapping::Dict) = _markdown(p, exec(f[]), relative(path(f), basename(t)), mapping)
+
+function _markdown(p::Project, node::CommonMark.Node, path::AbstractPath, mapping::Dict)
+    pub = p.env["publish"]
+    pub["mapping"] = mapping
+    dst = with_extension(path, "md")
+    dir, name = splitdir(dst)
+    cd(isempty(dir) ? "." : dir) do
+        open(name, "w") do io
+            pub["smartlink-engine"] = (_,_,n,_) -> markdown_link(n, p, pub, path)
+            CommonMark.markdown(io, node, pub)
+        end
+    end
+    delete!(pub, "mapping")
+end
+_markdown(::Project, data::Vector{UInt8}, path::AbstractPath, mapping::Dict) = write(path, data)
+_markdown(::Project, ::Any, ::AbstractPath, mapping::Dict) = nothing
+
+markdown_link(node, project, pub, path) = markdown_link(deepcopy(node.t), node, project, pub, path)
+
+function markdown_link(obj, node, project, pub, path)
+    if obj.destination == "#"
+        function docs_func!(literal::AbstractString)
+            dict = frontmatter(exec(project.tree[path][]))
+            module_binding = binding(get(dict, "module", findmodule(project.env)))
+            if Docs.defined(module_binding)
+                target_binding = binding(Docs.resolve(module_binding), literal)
+                if Docs.defined(target_binding)
+                    rel = relpath("docstrings/$target_binding.md", string(dirname(path)))
+                    obj.destination = rel
+                    @goto END
+                end
+            end
+            @warn "cross-reference link '$literal' on page '$path' cound not be found."
+            @label END
+            return nothing
+        end
+        function header_func!(literal::AbstractString)
+            slug = CommonMark.slugify(literal)
+            for each in project.pages, (node, enter) in exec(project.tree[each][])
+                if enter && get(node.meta, "id", nothing) == slug
+                    name = with_extension(relpath(each, dirname(path)), "md")
+                    obj.destination = "$name#$slug"
+                    obj.title = ""
+                    @goto END
+                end
+            end
+            @warn "cross-reference link '$literal' on page '$path' could not be found."
+            @label END
+            return nothing
+        end
+        ## `#` is used for cross-references. The link is determined by either
+        ## the provided `.title` field of the link, or the contents of the link.
+        if isempty(obj.title)
+            ## No title provided so we use the contents of the link.
+            (!CommonMark.isnull(node.first_child) && node.first_child.t isa CommonMark.Code) ?
+                docs_func!(node.first_child.literal) : header_func!(node.first_child.literal)
+        else
+            ## The `.title` is available, so use that to determine the link.
+            m = match(r"^`(.+)`$", obj.title)
+            m === nothing ? header_func!(obj.title) : docs_func!(m[1])
+        end
+    elseif startswith(obj.destination, "#")
+        ## Skip these kind of links, they're just page-local.
+    else
+        dst = Path(normpath(dirname(string(path)), obj.destination))
+        if haskey(pub["mapping"], dst)
+            ## If it's in the project's page mapping then we change the extension.
+            obj.destination = with_extension(obj.destination, "md")
+        end
+    end
+    return obj
+end
