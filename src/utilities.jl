@@ -272,7 +272,7 @@ are mutable.
     This uses `!isimmutable` for < Julia v1.5.
 """
 ismutable_recursive(x::T) where T = ismutable(x) || any(fieldnames(T)) do field
-    ismutable_recursive(getproperty(x, field))
+    ismutable_recursive(getfield(x, field))
 end
 
 end
