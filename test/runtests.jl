@@ -11,6 +11,25 @@ end
         path = joinpath(@__DIR__, "_projects/cell_tests/Project.toml")
         @test html(path; globals=Dict("publish" => Dict("cell-imports" => [CellImportedModule]))) == path
         @test pdf(path; globals=Dict("publish" => Dict("cell-imports" => [CellImportedModule]))) == path
+        mktempdir() do dir
+            cd(dir) do
+                @test deploy(path; versioned=false, globals=Dict("publish" => Dict("cell-imports" => [CellImportedModule]))) == path
+                cd("deploy") do
+                    x1 = """
+                    2-element Vector{Int64}:
+                     1
+                     2
+                    """
+                    x2 = """
+                    2-element Vector{Int64}:
+                     2
+                     2
+                    """
+                    @test occursin(x1, read("README.html", String))
+                    @test occursin(x2, read("README.html", String))
+                end
+            end
+        end
     end
     @testset "MIME type display" begin
         path = joinpath(@__DIR__, "_projects/mime_tests/Project.toml")
