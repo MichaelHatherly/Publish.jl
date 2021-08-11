@@ -248,6 +248,6 @@ Like `ismutable(x)` except it also recurses into
 This will return `true` if `x` or any of its sub-containers
 are mutable.
 """
-ismutable_recursive(x::T) where T = ismutable(x) || any(fieldnames(T)) do field
+ismutable_recursive(x::T) where T = Base.ismutable(x) || any(fieldnames(T)) do field
     ismutable_recursive(getproperty(x, field))
 end
