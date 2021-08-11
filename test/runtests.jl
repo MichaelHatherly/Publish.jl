@@ -13,18 +13,17 @@ end
         @test pdf(path; globals=Dict("publish" => Dict("cell-imports" => [CellImportedModule]))) == path
         mktempdir() do dir
             cd(dir) do
-                @test deploy(path; versioned=false, globals=Dict("publish" => Dict("cell-imports" => [CellImportedModule]))) == path
+                @test deploy(path, "deploy"; versioned=false, globals=Dict("publish" => Dict("cell-imports" => [CellImportedModule]))) == path
                 cd("deploy") do
-                    x1 = """
+                    x1 =
+                    """
                     2-element Vector{Int64}:
                      1
-                     2
-                    """
+                     2"""
                     x2 = """
                     2-element Vector{Int64}:
                      2
-                     2
-                    """
+                     2"""
                     @test occursin(x1, read("README.html", String))
                     @test occursin(x2, read("README.html", String))
                 end
