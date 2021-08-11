@@ -56,7 +56,9 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
             CommonMark.insert_after(node, ast)
             CommonMark.unlink(node)
         else
-            cell = CommonMark.Node(Cell(node, captured.value, captured.output))
+            # if captured.value contains _any_ mutable data, make a defensive copy
+            value = ismutable_recursive(captured.value) ? deepcopy(captured.value) : captured.value
+            cell = CommonMark.Node(Cell(node, value, captured.output))
             CommonMark.insert_after(node, cell)
             if get(node.meta, "display", "true") == "false"
                 cell.meta = node.meta

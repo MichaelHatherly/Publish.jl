@@ -238,3 +238,16 @@ function unix_joinpath(path::AbstractString, paths::AbstractString...)::String
     return path
 end
 unix_joinpath(path::AbstractString) = path
+
+"""
+    ismutable_recursive(x)
+
+Like `ismutable(x)` except it also recurses into
+`fieldnames(typeof(x))` to check if the fields are mutable.
+
+This will return `true` if `x` or any of its sub-containers
+are mutable.
+"""
+ismutable_recursive(x::T) where T = ismutable(x) || any(fieldnames(T)) do field
+    ismutable_recursive(getproperty(x, field))
+end
