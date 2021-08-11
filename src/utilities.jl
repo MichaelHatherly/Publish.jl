@@ -239,6 +239,8 @@ function unix_joinpath(path::AbstractString, paths::AbstractString...)::String
 end
 unix_joinpath(path::AbstractString) = path
 
+if VERSION < v"1.5"
+
 """
     ismutable_recursive(x)
 
@@ -247,16 +249,28 @@ Like `ismutable(x)` except it also recurses into
 
 This will return `true` if `x` or any of its sub-containers
 are mutable.
-Note this uses `!isimmutable` for < Julia v1.5.
-"""
-if VERSION < v"1.5"
 
+!!! warning
+    This uses `!isimmutable` for < Julia v1.5.
+"""
 ismutable_recursive(x::T) where T = !isimmutable(x) || any(fieldnames(T)) do field
     ismutable_recursive(getproperty(x, field))
 end
 
 else
 
+"""
+    ismutable_recursive(x)
+
+Like `ismutable(x)` except it also recurses into
+`fieldnames(typeof(x))` to check if the fields are mutable.
+
+This will return `true` if `x` or any of its sub-containers
+are mutable.
+
+!!! warning
+    This uses `!isimmutable` for < Julia v1.5.
+"""
 ismutable_recursive(x::T) where T = ismutable(x) || any(fieldnames(T)) do field
     ismutable_recursive(getproperty(x, field))
 end
