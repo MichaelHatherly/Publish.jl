@@ -57,7 +57,7 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
             CommonMark.unlink(node)
         else
             # if captured.value contains _any_ mutable data, make a defensive copy
-            value = ismutable_recursive(captured.value) ? deepcopy(captured.value) : captured.value
+            value = should_deepcopy(captured.value) ? deepcopy(captured.value) : captured.value
             cell = CommonMark.Node(Cell(node, value, captured.output))
             CommonMark.insert_after(node, cell)
             if get(node.meta, "display", "true") == "false"
@@ -68,6 +68,13 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
     end
     return nothing
 end
+
+# we want to deepcopy mutable cell output defensively
+# but we want to avoid certain core types that also happen to be mutable
+const DONT_DEEPCOPY = [
+    Base.MethodList
+]
+should_deepcopy(x::T) where T = ismutable_recursive(x) && (T ∉ DONT_DEEPCOPY)
 
 struct EmbeddedInline <: CommonMark.AbstractInline end
 
