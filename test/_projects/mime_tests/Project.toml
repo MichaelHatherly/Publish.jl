@@ -1,8 +1,8 @@
 name = "mime_tests"
 
 [deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Publish = "f065f642-d108-4f50-8aa5-6749150a895a"
 RDatasets = "ce6b1742-4840-55fa-b093-852dadbb1d8b"
 

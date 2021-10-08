@@ -4,14 +4,14 @@ Import the plotting package:
 
 {cell=plotting}
 ```julia
-using Plots
+using CairoMakie
 ```
 
 Make a nice plot, with a caption below:
 
 {#plot cell=plotting}
 ```julia
-plot(cumsum(randn(100)))
+scatter(1:4, 1:4)
 ```
 {style="text-align:center;font-size:small"}
 **Caption:** *A nice plot.*
