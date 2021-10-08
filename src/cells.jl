@@ -34,6 +34,7 @@ A custom node type for CommonMark.jl that holds an executable "cell" of code.
 struct Cell <: CommonMark.AbstractBlock
     node::CommonMark.Node
     value::Any
+    showvalue::Dict
     output::String
 end
 
@@ -56,7 +57,22 @@ CommonMark.block_modifier(c::CellRule) = CommonMark.Rule(100) do parser, node
             CommonMark.insert_after(node, ast)
             CommonMark.unlink(node)
         else
-            cell = CommonMark.Node(Cell(node, captured.value, captured.output))
+            # select the first suitable MIME type for HTML and LaTeX
+            # and save the show value
+            showvalue = Dict()
+            for doctype in (:html, :latex)
+                for mime in SUPPORTED_MIMES[doctype]
+                    if showable(mime, captured.value)
+                        ## We've found a suitable mimetype, display as that.
+                        showvalue[mime] = limitedshow(DEFAULT_PRINTERS[doctype], mime, captured.value)
+                        break
+                    end
+                end
+            end
+            ## Default output displays the result as in the REPL.
+            showvalue[MIME("text/plain")] = limitedshow(() -> nothing, MIME("text/plain"), captured.value)
+
+            cell = CommonMark.Node(Cell(node, captured.value, showvalue, captured.output))
             CommonMark.insert_after(node, cell)
             if get(node.meta, "display", "true") == "false"
                 cell.meta = node.meta
@@ -141,9 +157,9 @@ function display_as(default, cell, w, mimes)
     show_result == "true" || return nothing # Display result unless `result=false` was set.
     cell.value === nothing && return nothing # Skip `nothing` results.
     for mime in mimes
-        if showable(mime, cell.value)
+        if haskey(cell.showvalue, mime)
             ## We've found a suitable mimetype, display as that.
-            limitedshow(w.buffer, default, mime, cell.value)
+            print(w.buffer, cell.showvalue[mime])
             return nothing
         end
     end
@@ -151,7 +167,7 @@ function display_as(default, cell, w, mimes)
     code = CommonMark.Node(CommonMark.CodeBlock())
     code.t.info = "plaintext"
     code.meta["class"] = ["plaintext", "cell-output", "cell-result"]
-    code.literal = limitedshow(default, MIME("text/plain"), cell.value)
+    code.literal = cell.showvalue[MIME("text/plain")]
     default(code.t, w, code, true)
     return nothing
 end
@@ -169,6 +185,12 @@ limitedshow(io::IO, default, m, r) = Base.invokelatest(show, IOContext(io, :limi
 limitedshow(default, m, r) = sprint(limitedshow, default, m, r)
 
 # ## Supported image MIMES.
+
+const DEFAULT_PRINTERS = Dict{Symbol,Function}(
+    :html => CommonMark.write_html,
+    :latex => CommonMark.write_latex,
+    :term => CommonMark.write_term
+)
 
 const SUPPORTED_MIMES = Dict{Symbol,Vector{MIME}}(
     :html  => map(MIME, [

@@ -11,3 +11,14 @@ imported_dataframe
 ```julia
 Table(imported_dataframe)
 ```
+
+{cell=test-a}
+```julia
+x = [1, 2]
+```
+
+{cell=test-a}
+```julia
+x[1] = 2
+x
+```
