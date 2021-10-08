@@ -98,6 +98,9 @@ end
         ex = Publish.Experimental
         p = ex.Project(
             name = "virtual_doc_test",
+            publish = (;
+                tectonic = (; args = ["-w", "https://ttassets.z13.web.core.windows.net/tlextras-2020.0r0.tar"])
+            ),
             ex.Page(
                 "# Virtual Document Tests",
                 ex.Table(

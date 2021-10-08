@@ -3,3 +3,6 @@ name = "cell_tests"
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Publish = "f065f642-d108-4f50-8aa5-6749150a895a"
+
+[publish.tectonic]
+args = ["-w", "https://ttassets.z13.web.core.windows.net/tlextras-2020.0r0.tar"]
