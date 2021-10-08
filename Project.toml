@@ -37,7 +37,7 @@ PrettyTables = "1"
 Requires = "1"
 TOML = "1.0"
 Tectonic = "0.3, 0.4, 0.5, 0.6"
-julia = "1"
+julia = "1.6"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
