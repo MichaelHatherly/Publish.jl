@@ -346,16 +346,17 @@ function pdf(src, dst=nothing; keywords...)
         # bibliography file has been provided, in which case we must run
         # `biber` manually to correctly render bibliographies. The other is the
         # standard case, where no biblatex bibliography has been provided.
+        tectonic_args = p.env["publish"]["tectonic"]["args"]::Vector
         if haskey(t, "bibliography")
             Tectonic.tectonic() do bin
-                run(`$bin --keep-intermediates --reruns 0 $project_file`)
+                run(`$bin $(tectonic_args...) --keep-intermediates --reruns 0 $project_file`)
             end
             Tectonic.Biber.biber() do bin
                 run(`$bin $(first(splitext(project_file)))`)
             end
         end
         Tectonic.tectonic() do path
-            run(`$path $project_file`)
+            run(`$path $(tectonic_args...) $project_file`)
         end
     end
     return src

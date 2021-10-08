@@ -36,7 +36,7 @@ Mustache = "1"
 PrettyTables = "1"
 Requires = "1"
 TOML = "1.0"
-Tectonic = "0.3, 0.4, 0.5"
+Tectonic = "0.3, 0.4, 0.5, 0.6"
 julia = "1"
 
 [extras]
@@ -46,6 +46,9 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 keywords = ["documentation"]
 ignore = ["^(gh-pages|juliamnt|julia.dmg)$"]
 title = "Publish.jl"
+
+[publish.tectonic]
+args = ["-w", "https://ttassets.z13.web.core.windows.net/tlextras-2020.0r0.tar"]
 
 [targets]
 test = ["Test"]

@@ -11,6 +11,9 @@ function loadtoml(path::AbstractPath, globals)
             "toc" => "toc.md",
             "modules" => [],
             "references" => [],
+            "tectonic" => Dict(
+                "args" => [],
+            )
         ),
     )
     return rmerge(defaults, open(TOML.parse, path), globals)

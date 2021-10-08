@@ -5,3 +5,6 @@ Publish = "f065f642-d108-4f50-8aa5-6749150a895a"
 
 [publish]
 theme = "_theme"
+
+[publish.tectonic]
+args = ["-w", "https://ttassets.z13.web.core.windows.net/tlextras-2020.0r0.tar"]

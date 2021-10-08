@@ -8,3 +8,6 @@ RDatasets = "ce6b1742-4840-55fa-b093-852dadbb1d8b"
 
 [publish.html]
 css = ["style.css"]
+
+[publish.tectonic]
+args = ["-w", "https://ttassets.z13.web.core.windows.net/tlextras-2020.0r0.tar"]
