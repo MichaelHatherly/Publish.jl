@@ -12,12 +12,12 @@ Provided themes are currently:
 """
 module Themes
 
-using Pkg.Artifacts
+using RelocatableFolders
 
 """
 The "default" theme used by this package.
 """
-default() = artifact"publish_theme_default"
+const default = @path joinpath(@__DIR__, "..", "_themes", "default")
 
 end
 
@@ -54,4 +54,5 @@ function loadtheme(tree::FileTree, env::AbstractDict)
 end
 
 resolve_theme(f::Function) = f()
-resolve_theme(s::AbstractString) = s
+resolve_theme(s::AbstractString) = String(s)
+
