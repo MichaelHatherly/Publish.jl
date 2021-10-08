@@ -18,6 +18,7 @@ Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Mustache = "ffc61752-8dc7-55ee-8c37-f3e9cdd09e70"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+RelocatableFolders = "05181044-ff0b-4ac5-8273-598c1e38db00"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 Tectonic = "9ac5f52a-99c6-489f-af81-462ef484790f"
@@ -34,10 +35,11 @@ JSON = "0.20, 0.21"
 LiveServer = "0.5, 0.6"
 Mustache = "1"
 PrettyTables = "1"
+RelocatableFolders = "0.1"
 Requires = "1"
 TOML = "1.0"
-Tectonic = "0.3, 0.4, 0.5"
-julia = "1"
+Tectonic = "0.3, 0.4, 0.5, 0.6"
+julia = "1.6"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -46,6 +48,9 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 keywords = ["documentation"]
 ignore = ["^(gh-pages|juliamnt|julia.dmg)$"]
 title = "Publish.jl"
+
+    [publish.tectonic]
+    args = ["-w", "https://ttassets.z13.web.core.windows.net/tlextras-2020.0r0.tar"]
 
 [targets]
 test = ["Test"]

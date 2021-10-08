@@ -38,12 +38,12 @@ Provided themes are currently:
 &quot;&quot;&quot;
 module Themes
 
-using Pkg.Artifacts
+using RelocatableFolders
 
 &quot;&quot;&quot;
 The &quot;default&quot; theme used by this package.
 &quot;&quot;&quot;
-default() = artifact&quot;publish_theme_default&quot;
+const default = @path joinpath(@__DIR__, &quot;..&quot;, &quot;_themes&quot;, &quot;default&quot;)
 
 end
 </code></pre>
@@ -79,7 +79,7 @@ function loadtheme(tree::FileTree, env::AbstractDict)
 end
 
 resolve_theme(f::Function) = f()
-resolve_theme(s::AbstractString) = s
+resolve_theme(s::AbstractString) = String(s)
 </code></pre>
 </article>
         <div id="page-navigation">
