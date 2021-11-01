@@ -45,7 +45,7 @@ function init(p::Project, ::typeof(html); port=nothing, dir=nothing, kws...)
     LiveServer.serve(; port=port, dir=dir)
 end
 
-_html(p::Project, t::FileTree, f::File, m::Dict) = _html(p, exec(f[]), relative(path(f), basename(t)), m)
+_html(p::Project, t::FileTree, f::File, m::Dict) = _html(p, exec(f[]), relative(Path(path(f)), basename(t)), m)
 
 function _html(p::Project, node::CommonMark.Node, path::AbstractPath, mapping::Dict)
     if haskey(mapping, path)
@@ -285,7 +285,7 @@ end
 _inline_image(t::CommonMark.Image) = _base64resource(t.destination)
 _inline_image(t::CommonMark.Link) = t.destination
 
-_html_doc(io, p::Project, t::FileTree, f::File) = _html_doc(io, p, t, relative(path(f), basename(t)), exec(f[]))
+_html_doc(io, p::Project, t::FileTree, f::File) = _html_doc(io, p, t, relative(Path(path(f)), basename(t)), exec(f[]))
 _html_doc(io, p::Project, tree, path, thunk::FileTrees.Thunk) = _html_doc(io, p, tree, path, exec(thunk))
 _html_doc(io, p::Project, tree, path, data::Vector{UInt8}) = write(path, data)
 _html_doc(io, project, tree, path, other) = nothing
@@ -368,7 +368,7 @@ function init(p::Project, ::typeof(pdf); dir=nothing, kws...)
     run(`$pdf_viewer $(joinpath(dir, p.env["name"] * ".pdf"))`)
 end
 
-_pdf(p::Project, t::FileTree, f::File) = _pdf(p, exec(f[]), relative(path(f), basename(t)))
+_pdf(p::Project, t::FileTree, f::File) = _pdf(p, exec(f[]), relative(Path(path(f)), basename(t)))
 
 function _pdf(p::Project, node::CommonMark.Node, path::AbstractPath)
     pub = p.env["publish"]
