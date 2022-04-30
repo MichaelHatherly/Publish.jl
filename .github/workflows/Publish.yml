@@ -22,7 +22,7 @@ jobs:
       - name: Build and deploy
         run: |
           cd gh-pages
-          julia --color=yes --project=.. -e 'using Publish; deploy(Publish; root="/Publish.jl", label="dev")'
+          xvfb-run julia --color=yes --project=.. -e 'using Publish; deploy(Publish; root="/Publish.jl", label="dev")'
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add .
