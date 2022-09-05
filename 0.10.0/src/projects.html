@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Publish.jl" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="documentation" />
+    <title>Publish.jl</title>
+    <link rel="stylesheet" href="..&#x2F;normalize.css" />
+    <link rel="stylesheet" href="..&#x2F;tabulator_simple.min.css" />
+    <link rel="stylesheet" href="..&#x2F;publish.css" />
+    <link rel="stylesheet" href="..&#x2F;default.min.css" />
+    <script src="..&#x2F;versions.js"></script>
+    <script src="..&#x2F;lunr.js"></script>
+    <script src="..&#x2F;highlight.min.js"></script>
+    <script src="..&#x2F;tabulator.min.js"></script>
+    <script src="..&#x2F;julia.min.js"></script>
+    <script src="..&#x2F;julia-repl.min.js"></script>
+    <script src="..&#x2F;publish.js"></script>
+    
+</head>
+<body>
+    <div class="menu">
+        <svg id="menu-toggler" title="Contents" onclick="toggleIndexPage();" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z" fill="currentColor" /><path d="M2 12.0322C2 11.4799 2.44772 11.0322 3 11.0322H21C21.5523 11.0322 22 11.4799 22 12.0322C22 12.5845 21.5523 13.0322 21 13.0322H3C2.44772 13.0322 2 12.5845 2 12.0322Z" fill="currentColor" /><path d="M3 17.0645C2.44772 17.0645 2 17.5122 2 18.0645C2 18.6167 2.44772 19.0645 3 19.0645H21C21.5523 19.0645 22 18.6167 22 18.0645C22 17.5122 21.5523 17.0645 21 17.0645H3Z" fill="currentColor" /></svg>
+        <input id="search-input" placeholder="Search">
+        <select id="version-selector"></select>
+    </div>
+    <main id="page"><article><h1 id="projects"><a href="#projects" class="anchor"></a>Projects</h1>
+<pre><code class="language-julia">&quot;&quot;&quot;
+    struct Project
+
+A `struct` that holds details of a &quot;project&quot;, which is defined as
+
+&gt; a configuration file (in TOML format), along with a collection of associated
+&gt; source and support files.
+
+&quot;Projects&quot; can be created in two ways, by `Module`, or configuration path.
+&quot;&quot;&quot;
+Base.@kwdef mutable struct Project
+    path::Union{Nothing,AbstractPath} = nothing
+    env::Dict{String,Any} = Dict()
+    tree::FileTree = maketree(&quot;.&quot; =&gt; [])
+    pages::Vector{AbstractPath} = []
+    loaded::Dict{AbstractPath,Project} = Dict()
+    globals::Dict{String,Any} = Dict()
+end
+Base.show(io::IO, p::Project) = print(io, &quot;$Project($(p.path))&quot;)
+</code></pre>
+<h2 id="project-constructors"><a href="#project-constructors" class="anchor"></a><code>Project</code> Constructors</h2>
+<pre><code class="language-julia">&quot;&quot;&quot;
+    Project(mod)
+
+Create a new [`Project`](#) object from the given module `mod`.
+&quot;&quot;&quot;
+Project(mod::Module; kws...) = Project(findproject(mod); kws...)
+
+&quot;&quot;&quot;
+    Project(path)
+
+Create a new [`Project`](#) object from the given configuration `path`. The
+`path` must be a TOML file.
+&quot;&quot;&quot;
+Project(path::AbstractString; kws...) = Project(Path(path); kws...)
+
+function Project(path::AbstractPath; loaded=Dict{AbstractPath,Project}(), globals=Dict{String,Any}())
+    if haskey(loaded, path)
+        return loaded[path]
+    elseif isfile(path)
+        path = abspath(path)
+        cd(dirname(path)) do
+            path = canonicalize(path)
+            env = loadtoml(path, globals)
+            env = loadrefs(env)
+            tree = loadtree(env, path)
+            tree, env = loadtheme(tree, env)
+            tree, pages = loadpages(tree, env)
+            tree, pages = loaddocs(tree, env, pages)
+            loaded[path] = Project(
+                path    = path,
+                env     = env,
+                tree    = tree,
+                pages   = pages,
+                loaded  = loaded,
+                globals = globals,
+            )
+            return loaded[path]
+        end
+    else
+        # Raise error only when at 'toplevel' of project creation.
+        return isempty(loaded) ? error(&quot;not a file: '$path'.&quot;) : Project()
+    end
+end
+Project((name, uuid)::Pair; kws...) = Project(findmodule(name, uuid); kws...)
+Project(project::Project; kws...) = project
+Project(::Nothing; kws...) = nothing
+</code></pre>
+<h2 id="helper-functions"><a href="#helper-functions" class="anchor"></a>Helper Functions</h2>
+<pre><code class="language-julia">&quot;&quot;&quot;
+    findproject(mod)
+
+Returns the path to the configuration file for the module `mod`.
+
+When no path can be found, for example `Base` and it's modules, then `nothing`
+is returned instead.
+&quot;&quot;&quot;
+function findproject(mod::Module)
+    root = Base.moduleroot(mod)
+    meth = first(methods(root.eval))
+    file = string(meth.file)
+    isabspath(file) || return nothing
+    dir = dirname(dirname(realpath(file)))
+    for toml in (&quot;Project.toml&quot;, &quot;JuliaProject.toml&quot;)
+        f = joinpath(dir, toml)
+        isfile(f) &amp;&amp; return f
+    end
+    return nothing
+end
+findproject(id::Base.PkgId) = findproject(findmodule(id))
+
+function findmodule(id::Base.PkgId)
+    haskey(Base.loaded_modules, id) || Base.require(id)
+    return Base.loaded_modules[id]
+end
+findmodule(name::AbstractString, uuid::AbstractString) = findmodule(Base.PkgId(Base.UUID(uuid), name))
+findmodule(env::AbstractDict) = findmodule(env[&quot;name&quot;], get(env, &quot;uuid&quot;, nothing))
+findmodule(name::AbstractString, ::Nothing) = nothing
+
+function findmodules(env::AbstractDict)
+    roots = env[&quot;publish&quot;][&quot;modules&quot;]
+    mods = Set{Module}()
+    if isempty(roots)
+        mod = findmodule(env)
+        mod isa Module &amp;&amp; push!(mods, mod)
+    else
+        for root in roots
+            bind = binding(root)
+            if Docs.defined(bind)
+                push!(mods, Docs.resolve(bind))
+            end
+        end
+    end
+    return mods
+end
+
+&quot;&quot;&quot;
+    update!(project)
+
+Reload contents of the given `project`.
+&quot;&quot;&quot;
+function update!(p::Project)
+    # TODO: make this more efficient, only update parts of project that change.
+    delete!(p.loaded, p.path)
+    q = Project(string(p.path); loaded=p.loaded, globals=p.globals)
+    p.path = q.path
+    p.env = q.env
+    p.tree = q.tree
+    p.pages = q.pages
+    p.loaded = q.loaded
+    p.globals = q.globals
+    p.loaded[p.path] = p
+    return p
+end
+
+function loaddeps!(project::Project)
+    @info &quot;loading project dependencies.&quot;
+    for each in project.env[&quot;deps&quot;]
+        Project(each; loaded=project.loaded, globals=project.globals)
+    end
+end
+</code></pre>
+</article>
+        <div id="page-navigation">
+            <a id="previous-page" title="Previous" href="Publish.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="themes.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+        </div>
+    </main>
+    <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
+<ol style="margin: 0 auto; max-width: 350px">
+<li><a href="../README.html">Introduction</a></li>
+<li><a href="../docs/getting_started.html">Getting Started</a></li>
+<li><a href="../docs/structure.html">Project Structure</a></li>
+<li><a href="../docs/references.html">Cross Referencing</a></li>
+<li><a href="../docs/config.html">Configuration</a></li>
+<li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
+<li><a href="../docs/sources.html">Source Types</a></li>
+<li><a href="../docs/cells.html">Executable “Cells”</a></li>
+<li><a href="../docs/syntax.html">Markdown Syntax</a></li>
+</ol>
+<p style="text-align: center"><strong>Examples</strong></p>
+<ul style="list-style: none; margin: 0 auto; max-width: 350px">
+<li><a href="../examples/basics.html">Basics</a></li>
+<li><a href="../examples/cells.html">Cells</a></li>
+</ul>
+<p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
+<p style="text-align: center"><strong>SOURCE</strong></p>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="../src/Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="../src/projects.html"><code>projects.jl</code></a></li>
+<li><a href="../src/themes.html"><code>themes.jl</code></a></li>
+<li><a href="../src/load.html"><code>load.jl</code></a></li>
+<li><a href="../src/cells.html"><code>cells.jl</code></a></li>
+<li><a href="../src/save.html"><code>save.jl</code></a></li>
+<li><a href="../src/serve.html"><code>serve.jl</code></a></li>
+<li><a href="../src/deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="../src/tools.html"><code>tools.jl</code></a></li>
+<li><a href="../src/utilities.html"><code>utilities.jl</code></a></li>
+</ul>
+<p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
+</nav>
+    <footer>
+        Built with <a target="_blank" href="https://github.com/MichaelHatherly/Publish.jl">Publish.jl</a> and the <a target="_blank" href="https://julialang.org">Julia Language.</a>
+    </footer>
+    <script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>

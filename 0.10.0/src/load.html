@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Publish.jl" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="documentation" />
+    <title>Publish.jl</title>
+    <link rel="stylesheet" href="..&#x2F;normalize.css" />
+    <link rel="stylesheet" href="..&#x2F;tabulator_simple.min.css" />
+    <link rel="stylesheet" href="..&#x2F;publish.css" />
+    <link rel="stylesheet" href="..&#x2F;default.min.css" />
+    <script src="..&#x2F;versions.js"></script>
+    <script src="..&#x2F;lunr.js"></script>
+    <script src="..&#x2F;highlight.min.js"></script>
+    <script src="..&#x2F;tabulator.min.js"></script>
+    <script src="..&#x2F;julia.min.js"></script>
+    <script src="..&#x2F;julia-repl.min.js"></script>
+    <script src="..&#x2F;publish.js"></script>
+    
+</head>
+<body>
+    <div class="menu">
+        <svg id="menu-toggler" title="Contents" onclick="toggleIndexPage();" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z" fill="currentColor" /><path d="M2 12.0322C2 11.4799 2.44772 11.0322 3 11.0322H21C21.5523 11.0322 22 11.4799 22 12.0322C22 12.5845 21.5523 13.0322 21 13.0322H3C2.44772 13.0322 2 12.5845 2 12.0322Z" fill="currentColor" /><path d="M3 17.0645C2.44772 17.0645 2 17.5122 2 18.0645C2 18.6167 2.44772 19.0645 3 19.0645H21C21.5523 19.0645 22 18.6167 22 18.0645C22 17.5122 21.5523 17.0645 21 17.0645H3Z" fill="currentColor" /></svg>
+        <input id="search-input" placeholder="Search">
+        <select id="version-selector"></select>
+    </div>
+    <main id="page"><article><h1 id="file-loaders"><a href="#file-loaders" class="anchor"></a>File Loaders</h1>
+<pre><code class="language-julia">function loadtoml(path::AbstractPath, globals)
+    defaults = Dict{String,Any}(
+        &quot;deps&quot; =&gt; Dict{String,String}(),
+        &quot;publish&quot; =&gt; Dict(
+            &quot;ignore&quot; =&gt; [],
+            &quot;theme&quot; =&gt; &quot;Publish.Themes.default&quot;,
+            &quot;config&quot; =&gt; &quot;Project.toml&quot;,
+            &quot;pages&quot; =&gt; [&quot;README.md&quot;],
+            &quot;toc&quot; =&gt; &quot;toc.md&quot;,
+            &quot;modules&quot; =&gt; [],
+            &quot;references&quot; =&gt; [],
+            &quot;tectonic&quot; =&gt; Dict(
+                &quot;args&quot; =&gt; [],
+            )
+        ),
+    )
+    return rmerge(defaults, open(TOML.parse, path), globals)
+end
+
+function loadrefs(env)
+</code></pre>
+<p>Loading of references/bibliography. We can either load a <code>.bib</code> file for
+use in LaTeX/PDF output, which turns on <code>citations = biblatex</code> for
+control of how citations are printed out to LaTeX.</p>
+<p>Our other option is to print out basic citations using a JSON or TOML
+source. TODO: write conversion from JSON/TOML to BIB and back so that we
+can use either source for biblatex bibliographies.</p>
+<pre><code class="language-julia">    if haskey(env[&quot;publish&quot;], &quot;latex&quot;) &amp;&amp; haskey(env[&quot;publish&quot;][&quot;latex&quot;], &quot;bibliography&quot;)
+        env[&quot;publish&quot;][&quot;citations&quot;] = &quot;biblatex&quot;
+    else
+        refs = env[&quot;publish&quot;][&quot;references&quot;]
+        if isa(refs, String) &amp;&amp; isfile(refs)
+</code></pre>
+<p>TODO: support YAML and XML as well?</p>
+<pre><code class="language-julia">            env[&quot;publish&quot;][&quot;references&quot;] =
+                endswith(refs, &quot;.toml&quot;) ? TOML.parsefile(refs) :
+                endswith(refs, &quot;.json&quot;) ? JSON.Parser.parsefile(refs) : []
+        end
+    end
+    return env
+end
+
+rtree(f, d) = isdir(d) ? (d =&gt; [cd(()-&gt;rtree(f, x), d) for x in readdir(d) if f(x)]) : d
+mktree(dir::Union{AbstractPath,AbstractString}, f=x-&gt;true) = FileTrees.maketree(rtree(f, abspath(dir)))
+
+function loadtree(env::AbstractDict, p::AbstractPath)
+    # Custom ignore patterns from configuration are regular expressions.
+    ignore = map(Regex, env[&quot;publish&quot;][&quot;ignore&quot;])
+    fn = function (path::AbstractString)
+        # Always ignore anything starting with '.' or '_'.
+        startswith(path, ['.', '_']) &amp;&amp; return true
+        for each in ignore
+            occursin(each, path) &amp;&amp; return true
+        end
+        return false
+    end
+    # Construct the initial FileTree manually since this avoids reading in
+    # huge directories that exceed open file limit on default OSX.
+    tree = mktree(string(isfile(p) ? dirname(p) : p), !fn)
+    return FileTrees.load(tree; lazy=LAZY[]) do file
+        loadfile(env, joinpath(basename(tree), path(file)))
+    end
+end
+
+&quot;&quot;&quot;
+A dispatch type used to make file loading extensible by extension name.
+&quot;&quot;&quot;
+struct Extension{E} end
+Extension(path::AbstractPath) = Extension{Symbol(extension(path))}()
+
+&quot;&quot;&quot;
+    loadfile(env, path)
+
+Loads a file. Extended by `loadfile` methods that dispatch based on the
+[extension](# &quot;`Extension`&quot;) of the file.
+&quot;&quot;&quot;
+loadfile(env::AbstractDict, path::AbstractPath) = loadfile(Extension(path), env, path)
+
+loadfile(::Extension{:md}, env, path) = open(path) do io
+    parser = init_markdown_parser(env[&quot;publish&quot;])
+    load_markdown(io, parser)
+end
+
+function loadfile(::Extension{:jl}, env, path)
+    io = IOBuffer()
+    code = String[]
+    state = :text
+    # Helper function the reduces code duplication below.
+    code_block_helper = function (state)
+        if state === :code
+            first = findfirst(l -&gt; any(!isspace, l), code)
+            last  = findlast(l -&gt; any(!isspace, l), code)
+            (first === last === nothing) || join(io, code[first:last])
+            empty!(code)
+            println(io, CODE_FENCE, &quot;\n&quot;)
+        end
+    end
+    open(path) do handle
+        for line in eachline(handle)
+            m = match(r&quot;^(\s*)([#]*)(.*)&quot;, line)
+            if m !== nothing
+                ws, comments, rest = m[1], m[2], m[3]
+                count = length(comments)
+                if count == 1
+                    # Remove single whitespace after the comment.
+                    line = chop(rest; head=1, tail=0)
+                    code_block_helper(state)
+                    println(io, line)
+                    state = :text
+                else
+                    # Start a new code block.
+                    state === :text &amp;&amp; println(io, CODE_FENCE, &quot;julia&quot;)
+                    push!(code, string(ws, count === 0 ? &quot;&quot; : '#'^(count-1), rest, '\n'))
+                    state = :code
+                end
+            end
+        end
+    end
+    # Clean up last code block.
+    code_block_helper(state)
+    parser = init_markdown_parser(env[&quot;publish&quot;])
+    return load_markdown(io, parser)
+end
+
+function loadfile(::Extension{:ipynb}, env, path)
+    dict = open(JSON.parse, path)
+    io = IOBuffer()
+    if haskey(dict, &quot;cells&quot;)
+        for cell in dict[&quot;cells&quot;]
+            if haskey(cell, &quot;cell_type&quot;)
+                type = cell[&quot;cell_type&quot;]
+                source = get(cell, &quot;source&quot;, &quot;&quot;)
+                if type == &quot;markdown&quot;
+                    join(io, source)
+                    println(io)
+                elseif type == &quot;code&quot;
+                    println(io, CODE_FENCE, &quot;julia&quot;)
+                    join(io, source)
+                    println(io)
+                    println(io, CODE_FENCE)
+                end
+            end
+        end
+    end
+    parser = init_markdown_parser(env[&quot;publish&quot;])
+    return load_markdown(io, parser)
+end
+
+loadfile(::Extension, env, path) = read(path)
+
+&quot;&quot;&quot;
+Loads &quot;virtual&quot; files for each docstring that is defined within the given
+project. Merges these files into the given `tree` as well as appending them to
+`pages`.
+&quot;&quot;&quot;
+function loaddocs(tree::FileTree, env::AbstractDict, pages::Vector)
+    docs_dir, docs_index = &quot;docstrings&quot;, &quot;docstrings.md&quot;
+    roots = findmodules(env)
+    docs = DataStructures.SortedDict{String,Tuple{Module,Docs.Binding,Docs.MultiDoc}}()
+    for mod in visible_modules(env)
+        if Base.moduleroot(mod) in roots
+            for (k, v) in Docs.meta(mod)
+                docs[&quot;$k.md&quot;] = (mod, k, v)
+            end
+        end
+    end
+    isempty(docs) &amp;&amp; return tree, pages # Bail early if no docstrings are found.
+    append!(pages, sort!([joinpath(Path(docs_dir), k) for k in keys(docs)]; by=string))
+    dtree = maketree(basename(tree) =&gt; [docs_index, docs_dir =&gt; keys(docs)])
+    dtree = FileTrees.load(dtree; lazy=LAZY[]) do file
+        name = basename(path(file))
+        io = IOBuffer()
+        visibility(binding) = Base.isexported(binding.mod, binding.var) ? &quot;public&quot; : &quot;private&quot;
+        if name == docs_index
+            println(io, &quot;{#docstring-index}&quot;)
+            println(io, &quot;| Name | Module | Visibility | Category |&quot;)
+            println(io, &quot;|------|--------|------------|----------|&quot;)
+            for (k, (mod, bind, doc)) in docs
+                vis, cat = visibility(bind), categorise(bind)
+                println(io, &quot;| [`$(bind.var)`](docstrings/$k) | `$mod` | `$vis` | `$cat` |&quot;)
+            end
+        else
+            mod, bind, doc = docs[name]
+            println(io, &quot;```{=html}\n&lt;div class='docs' id='$(bind.var)'&gt;\n```&quot;) # TODO: raw latex.
+            println(io, &quot;`$(visibility(bind))` `$(bind.var)` --- `$(categorise(bind))`&quot;)
+            for (n, sig) in enumerate(doc.order)
+                println(io)
+                println(io, &quot;```{=html}\n&lt;div class='doc' id='$n'&gt;\n```&quot;)
+                printdoc(io, doc.docs[sig])
+                println(io, &quot;```{=html}\n&lt;/div&gt;\n```&quot;)
+            end
+            println(io, &quot;```{=html}\n&lt;/div&gt;\n```&quot;)
+        end
+        parser = init_markdown_parser(env[&quot;publish&quot;])
+        return load_markdown(io, parser)
+    end
+    return merge(tree, dtree), pages
+end
+
+&quot;&quot;&quot;
+    loadpages(tree, env)
+
+Finds all files defined by the project's table of contents and loads them into
+the `tree`.
+&quot;&quot;&quot;
+function loadpages(tree::FileTree, env::AbstractDict)
+    toc = env[&quot;publish&quot;][&quot;toc&quot;]
+    tree = try_touch(tree, toc) do
+        io = IOBuffer()
+        for page in env[&quot;publish&quot;][&quot;pages&quot;]
+            path = Path(page)
+            println(io, &quot;  - [$(filename(path))]($path)&quot;)
+        end
+        return load_markdown(io)
+    end
+    pages = []
+    for (node, enter) in exec(tree[toc][])
+        if enter &amp;&amp; node.t isa CommonMark.Link
+            push!(pages, Path(node.t.destination))
+        end
+    end
+    return tree, pages
+end
+</code></pre>
+</article>
+        <div id="page-navigation">
+            <a id="previous-page" title="Previous" href="themes.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.2426 6.34317L14.8284 4.92896L7.75739 12L14.8285 19.0711L16.2427 17.6569L10.5858 12L16.2426 6.34317Z" fill="currentColor" /></svg></a>
+            <a id="next-page" title="Next" href="cells.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5858 6.34317L12 4.92896L19.0711 12L12 19.0711L10.5858 17.6569L16.2427 12L10.5858 6.34317Z" fill="currentColor" /></svg></a>
+        </div>
+    </main>
+    <nav id="toc"><p style="text-align: center"><strong>MANUAL</strong></p>
+<ol style="margin: 0 auto; max-width: 350px">
+<li><a href="../README.html">Introduction</a></li>
+<li><a href="../docs/getting_started.html">Getting Started</a></li>
+<li><a href="../docs/structure.html">Project Structure</a></li>
+<li><a href="../docs/references.html">Cross Referencing</a></li>
+<li><a href="../docs/config.html">Configuration</a></li>
+<li><a href="../docs/templates.html">Templates</a></li>
+<li><a href="../docs/themes.html">Custom Themes</a></li>
+<li><a href="../docs/sources.html">Source Types</a></li>
+<li><a href="../docs/cells.html">Executable “Cells”</a></li>
+<li><a href="../docs/syntax.html">Markdown Syntax</a></li>
+</ol>
+<p style="text-align: center"><strong>Examples</strong></p>
+<ul style="list-style: none; margin: 0 auto; max-width: 350px">
+<li><a href="../examples/basics.html">Basics</a></li>
+<li><a href="../examples/cells.html">Cells</a></li>
+</ul>
+<p style="text-align: center"><a href="../docstrings.html"><strong>LIBRARY INDEX</strong></a></p>
+<p style="text-align: center"><strong>SOURCE</strong></p>
+<ul style="margin: 0 auto; max-width: 350px">
+<li><a href="../src/Publish.html"><code>Publish.jl</code></a></li>
+<li><a href="../src/projects.html"><code>projects.jl</code></a></li>
+<li><a href="../src/themes.html"><code>themes.jl</code></a></li>
+<li><a href="../src/load.html"><code>load.jl</code></a></li>
+<li><a href="../src/cells.html"><code>cells.jl</code></a></li>
+<li><a href="../src/save.html"><code>save.jl</code></a></li>
+<li><a href="../src/serve.html"><code>serve.jl</code></a></li>
+<li><a href="../src/deploy.html"><code>deploy.jl</code></a></li>
+<li><a href="../src/tools.html"><code>tools.jl</code></a></li>
+<li><a href="../src/utilities.html"><code>utilities.jl</code></a></li>
+</ul>
+<p style="text-align: center"><a href="../LICENSE.html"><strong>LICENSE</strong></a></p>
+</nav>
+    <footer>
+        Built with <a target="_blank" href="https://github.com/MichaelHatherly/Publish.jl">Publish.jl</a> and the <a target="_blank" href="https://julialang.org">Julia Language.</a>
+    </footer>
+    <script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>

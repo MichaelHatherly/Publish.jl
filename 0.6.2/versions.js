@@ -17,5 +17,6 @@ var PUBLISH_VERSIONS = [
     ["0.4.0","/Publish.jl/0.4.0/index.html"],
     ["0.3.0","/Publish.jl/0.3.0/index.html"],
     ["0.2.0","/Publish.jl/0.2.0/index.html"],
+    ["0.10.0","/Publish.jl/0.10.0/index.html"],
     ["0.1.0","/Publish.jl/0.1.0/index.html"],
 ];
