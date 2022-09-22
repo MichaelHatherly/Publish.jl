@@ -170,6 +170,6 @@ Table(
 Supported keywords, along with their default values, are:
 
   - `placement = "h"`: where on the page to place the table.
-  - `alighment = "center"`: horizontal alighment of the table.
+  - `alighment = "center"`: horizontal alignment of the table.
   - `caption = ""`: a simple caption to go with the figure.
   - `desc = ""`: short description to use in a *List of Tables*.

@@ -156,7 +156,7 @@ keywords used by [`deploy`](#) here are `root` and `label`:
   - `root` specifies a "root" path for all deployed documentation. Since we're
     using GitHub Pages to host your documentation it'll be hosted at
     `<username>.github.io/<pkg>.jl/`. We need to tell [`deploy`](#) about this
-    otherwise it'll set the root to `<username>.gitgub.io/` which won't point
+    otherwise it'll set the root to `<username>.github.io/` which won't point
     to the correct place.
 
   - `label` is used to assign a "tracking" folder that follows any changes you
